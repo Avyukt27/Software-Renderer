@@ -35,11 +35,26 @@ impl App {
     }
 
     pub fn rotate_vertex(&self, vertex: &Vertex) -> Vertex {
-        let mut rotated = *vertex;
+        let center = Vertex {
+            x: 0.0,
+            y: 0.0,
+            z: 10.0,
+        };
+
+        let mut rotated = Vertex {
+            x: vertex.x - center.x,
+            y: vertex.y - center.y,
+            z: vertex.z - center.z,
+        };
+
         rotated = self.renderer.rotate_x(&rotated, self.angles.0);
         rotated = self.renderer.rotate_y(&rotated, self.angles.1);
         rotated = self.renderer.rotate_z(&rotated, self.angles.2);
-        rotated
+        Vertex {
+            x: rotated.x + center.x,
+            y: rotated.y + center.y,
+            z: rotated.z + center.z,
+        }
     }
 }
 
