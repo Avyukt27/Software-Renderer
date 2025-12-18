@@ -69,6 +69,61 @@ impl Renderer {
         }
     }
 
+    pub fn draw_edge(
+        &mut self,
+        vertex_1: &Vertex,
+        vertex_2: &Vertex,
+        red: u8,
+        green: u8,
+        blue: u8,
+        alpha: u8,
+    ) {
+        let projected_1 = match self.project(vertex_1) {
+            Some(vertex) => vertex,
+            None => return,
+        };
+        let projected_2 = match self.project(vertex_2) {
+            Some(vertex) => vertex,
+            None => return,
+        };
+
+        let (mut x1, mut y1) = projected_1;
+        let (x2, y2) = projected_2;
+
+        let dx = (x2 as isize - x1 as isize).abs();
+        let dy = -(y2 as isize - y1 as isize).abs();
+        let sx = if x1 < x2 { 1 } else { -1 };
+        let sy = if y1 < y2 { 1 } else { -1 };
+        let mut err = dx + dy;
+
+        loop {
+            self.put_pixel(x1, y1, red, green, blue, alpha);
+            if x1 == x2 && y1 == y2 {
+                break;
+            }
+            let err_2 = 2 * err;
+            if err_2 >= dy {
+                err += dy;
+                x1 = (x1 as isize + sx) as usize;
+            }
+            if err_2 <= dx {
+                err += dx;
+                y1 = (y1 as isize + sy) as usize;
+            }
+        }
+    }
+
+    pub fn rotate_x(&self, vertex: &Vertex, angle: f32) -> Vertex {
+        let sin = angle.sin() as f64;
+        let cos = angle.cos() as f64;
+
+        Vertex {
+            x: vertex.x,
+            y: vertex.y * cos - vertex.z * sin,
+            z: vertex.y * sin + vertex.z * cos,
+        }
+    }
+
     pub fn project(&self, vertex: &Vertex) -> Option<(usize, usize)> {
         if vertex.z <= 0.0 {
             return None;
