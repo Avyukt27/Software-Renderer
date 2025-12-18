@@ -141,7 +141,7 @@ impl Renderer {
 
         Vertex {
             x: vertex.x * cos - vertex.y * sin,
-            y: vertex.x * sin - vertex.y * cos,
+            y: vertex.x * sin + vertex.y * cos,
             z: vertex.z,
         }
     }
@@ -151,7 +151,7 @@ impl Renderer {
             return None;
         }
 
-        let fov = 90.0_f32.to_radians();
+        let fov = 60.0_f32.to_radians();
         let f = 1.0 / (fov / 2.0).tan() as f64;
 
         let x_ndc = (vertex.x * f) / vertex.z;
