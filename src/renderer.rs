@@ -124,6 +124,28 @@ impl Renderer {
         }
     }
 
+    pub fn rotate_y(&self, vertex: &Vertex, angle: f32) -> Vertex {
+        let sin = angle.sin() as f64;
+        let cos = angle.cos() as f64;
+
+        Vertex {
+            x: vertex.x * cos + vertex.z * sin,
+            y: vertex.y,
+            z: -vertex.x * sin + vertex.z * cos,
+        }
+    }
+
+    pub fn rotate_z(&self, vertex: &Vertex, angle: f32) -> Vertex {
+        let sin = angle.sin() as f64;
+        let cos = angle.cos() as f64;
+
+        Vertex {
+            x: vertex.x * cos - vertex.y * sin,
+            y: vertex.x * sin - vertex.y * cos,
+            z: vertex.z,
+        }
+    }
+
     pub fn project(&self, vertex: &Vertex) -> Option<(usize, usize)> {
         if vertex.z <= 0.0 {
             return None;
