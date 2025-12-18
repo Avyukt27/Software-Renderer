@@ -21,6 +21,7 @@ struct App {
     pixels: Option<Pixels<'static>>,
     renderer: renderer::Renderer,
     vertices: Vec<Vertex>,
+    edges: Vec<(u8, u8)>,
 }
 
 impl App {
@@ -30,6 +31,7 @@ impl App {
             pixels: None,
             renderer: Renderer::new(width, height),
             vertices: vec![],
+            edges: vec![],
         }
     }
 }
@@ -65,13 +67,65 @@ impl ApplicationHandler for App {
         self.window = Some(window);
         self.pixels = Some(pixels);
 
-        let mut vertices = vec![Vertex {
-            x: 0.0,
-            y: 0.0,
-            z: 5.0,
-        }];
-
+        let mut vertices = vec![
+            Vertex {
+                x: -1.0,
+                y: -1.0,
+                z: 11.0,
+            },
+            Vertex {
+                x: 1.0,
+                y: -1.0,
+                z: 11.0,
+            },
+            Vertex {
+                x: 1.0,
+                y: 1.0,
+                z: 11.0,
+            },
+            Vertex {
+                x: -1.0,
+                y: 1.0,
+                z: 11.0,
+            },
+            Vertex {
+                x: -1.0,
+                y: -1.0,
+                z: 9.0,
+            },
+            Vertex {
+                x: 1.0,
+                y: -1.0,
+                z: 9.0,
+            },
+            Vertex {
+                x: 1.0,
+                y: 1.0,
+                z: 9.0,
+            },
+            Vertex {
+                x: -1.0,
+                y: 1.0,
+                z: 9.0,
+            },
+        ];
         self.vertices.append(&mut vertices);
+
+        let mut edges = vec![
+            (0, 1),
+            (1, 2),
+            (2, 3),
+            (3, 0),
+            (4, 5),
+            (5, 6),
+            (6, 7),
+            (7, 4),
+            (0, 4),
+            (1, 5),
+            (2, 6),
+            (3, 7),
+        ];
+        self.edges.append(&mut edges);
     }
 
     fn window_event(
@@ -85,6 +139,16 @@ impl ApplicationHandler for App {
                 self.renderer.clear(0, 0, 0, 255);
                 for vertex in self.vertices.iter() {
                     self.renderer.draw_vertex(&vertex);
+                }
+                for edge in self.edges.iter() {
+                    self.renderer.draw_edge(
+                        &self.vertices[edge.0 as usize],
+                        &self.vertices[edge.1 as usize],
+                        255,
+                        255,
+                        255,
+                        255,
+                    );
                 }
 
                 if let Some(pixels) = &mut self.pixels {
