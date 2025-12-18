@@ -22,6 +22,7 @@ struct App {
     renderer: renderer::Renderer,
     vertices: Vec<Vertex>,
     edges: Vec<(u8, u8)>,
+    angles: (f32, f32, f32),
 }
 
 impl App {
@@ -32,6 +33,7 @@ impl App {
             renderer: Renderer::new(width, height),
             vertices: vec![],
             edges: vec![],
+            angles: (0.0, 0.0, 0.0),
         }
     }
 }
@@ -137,13 +139,25 @@ impl ApplicationHandler for App {
         match event {
             WindowEvent::RedrawRequested => {
                 self.renderer.clear(0, 0, 0, 255);
-                for vertex in self.vertices.iter() {
-                    self.renderer.draw_vertex(&vertex);
+
+                self.angles.0 += 0.01;
+                self.angles.1 += 0.015;
+                self.angles.2 += 0.012;
+
+                let rotated_vertices: Vec<Vertex> = self
+                    .vertices
+                    .iter()
+                    .map(|v| self.rotate_vertex(v))
+                    .collect();
+
+                for vertex in rotated_vertices.iter() {
+                    self.renderer.draw_vertex(vertex);
                 }
+
                 for edge in self.edges.iter() {
                     self.renderer.draw_edge(
-                        &self.vertices[edge.0 as usize],
-                        &self.vertices[edge.1 as usize],
+                        &rotated_vertices[edge.0 as usize],
+                        &rotated_vertices[edge.1 as usize],
                         255,
                         255,
                         255,
@@ -155,6 +169,10 @@ impl ApplicationHandler for App {
                     let frame = pixels.frame_mut();
                     frame.copy_from_slice(&self.renderer.buffer);
                     pixels.render().unwrap();
+                }
+
+                if let Some(window) = &self.window {
+                    window.request_redraw();
                 }
             }
             WindowEvent::Resized(size) => {
@@ -169,6 +187,16 @@ impl ApplicationHandler for App {
             }
             _ => {}
         }
+    }
+}
+
+impl App {
+    fn rotate_vertex(&self, vertex: &Vertex) -> Vertex {
+        let mut rotated = *vertex;
+        rotated = self.renderer.rotate_x(&rotated, self.angles.0);
+        rotated = self.renderer.rotate_y(&rotated, self.angles.1);
+        rotated = self.renderer.rotate_z(&rotated, self.angles.2);
+        rotated
     }
 }
 
