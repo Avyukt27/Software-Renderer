@@ -65,11 +65,13 @@ impl ApplicationHandler for App {
         self.window = Some(window);
         self.pixels = Some(pixels);
 
-        self.vertices.push(Vertex {
-            x: 1.0,
-            y: -1.0,
-            z: 2.0,
-        });
+        let mut vertices = vec![Vertex {
+            x: 0.0,
+            y: 0.0,
+            z: 5.0,
+        }];
+
+        self.vertices.append(&mut vertices);
     }
 
     fn window_event(
