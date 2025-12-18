@@ -56,39 +56,8 @@ impl App {
             z: rotated.z + center.z,
         }
     }
-}
 
-impl ApplicationHandler for App {
-    fn resumed(&mut self, event_loop: &ActiveEventLoop) {
-        let window = event_loop
-            .create_window(
-                WindowAttributes::default()
-                    .with_title("Window")
-                    .with_inner_size(winit::dpi::LogicalSize::new(
-                        self.renderer.width as f64,
-                        self.renderer.height as f64,
-                    )),
-            )
-            .unwrap();
-
-        let window = Arc::new(window);
-
-        let surface = SurfaceTexture::new(
-            self.renderer.width as u32,
-            self.renderer.height as u32,
-            window.clone(),
-        );
-
-        let pixels = Pixels::new(
-            self.renderer.width as u32,
-            self.renderer.height as u32,
-            surface,
-        )
-        .unwrap();
-
-        self.window = Some(window);
-        self.pixels = Some(pixels);
-
+    fn create_cube(&mut self) {
         let mut vertices = vec![
             Vertex {
                 x: -1.0,
@@ -148,6 +117,41 @@ impl ApplicationHandler for App {
             (3, 7),
         ];
         self.edges.append(&mut edges);
+    }
+}
+
+impl ApplicationHandler for App {
+    fn resumed(&mut self, event_loop: &ActiveEventLoop) {
+        let window = event_loop
+            .create_window(
+                WindowAttributes::default()
+                    .with_title("Window")
+                    .with_inner_size(winit::dpi::LogicalSize::new(
+                        self.renderer.width as f64,
+                        self.renderer.height as f64,
+                    )),
+            )
+            .unwrap();
+
+        let window = Arc::new(window);
+
+        let surface = SurfaceTexture::new(
+            self.renderer.width as u32,
+            self.renderer.height as u32,
+            window.clone(),
+        );
+
+        let pixels = Pixels::new(
+            self.renderer.width as u32,
+            self.renderer.height as u32,
+            surface,
+        )
+        .unwrap();
+
+        self.window = Some(window);
+        self.pixels = Some(pixels);
+
+        self.create_cube();
     }
 
     fn window_event(
