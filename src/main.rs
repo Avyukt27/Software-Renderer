@@ -9,20 +9,29 @@ use winit::{
 
 use pixels::{Pixels, SurfaceTexture};
 
-#[derive(Debug, Default)]
-struct Vertex {
-    x: f64,
-    y: f64,
-    z: f64,
-}
+mod renderer;
+mod vertex;
+
+use renderer::Renderer;
+use vertex::Vertex;
 
 #[derive(Debug)]
-struct Renderer {}
-
-#[derive(Debug, Default)]
 struct App {
     window: Option<Arc<Window>>,
     pixels: Option<Pixels<'static>>,
+    renderer: renderer::Renderer,
+    vertices: Vec<Vertex>,
+}
+
+impl App {
+    fn new(width: usize, height: usize) -> Self {
+        Self {
+            window: None,
+            pixels: None,
+            renderer: Renderer::new(width, height),
+            vertices: vec![],
+        }
+    }
 }
 
 impl ApplicationHandler for App {
@@ -31,19 +40,36 @@ impl ApplicationHandler for App {
             .create_window(
                 WindowAttributes::default()
                     .with_title("Window")
-                    .with_inner_size(winit::dpi::LogicalSize::new(800.0, 600.0)),
+                    .with_inner_size(winit::dpi::LogicalSize::new(
+                        self.renderer.width as f64,
+                        self.renderer.height as f64,
+                    )),
             )
             .unwrap();
 
         let window = Arc::new(window);
-        let size = window.inner_size();
 
-        let surface = SurfaceTexture::new(size.width, size.height, window.clone());
+        let surface = SurfaceTexture::new(
+            self.renderer.width as u32,
+            self.renderer.height as u32,
+            window.clone(),
+        );
 
-        let pixels = Pixels::new(size.width, size.height, surface).unwrap();
+        let pixels = Pixels::new(
+            self.renderer.width as u32,
+            self.renderer.height as u32,
+            surface,
+        )
+        .unwrap();
 
         self.window = Some(window);
         self.pixels = Some(pixels);
+
+        self.vertices.push(Vertex {
+            x: 1.0,
+            y: -1.0,
+            z: 2.0,
+        });
     }
 
     fn window_event(
@@ -54,26 +80,22 @@ impl ApplicationHandler for App {
     ) {
         match event {
             WindowEvent::RedrawRequested => {
+                self.renderer.clear(0, 0, 0, 255);
+                for vertex in self.vertices.iter() {
+                    self.renderer.draw_vertex(&vertex);
+                }
+
                 if let Some(pixels) = &mut self.pixels {
                     let frame = pixels.frame_mut();
-                    for px in frame.chunks_exact_mut(4) {
-                        px[0] = 0;
-                        px[1] = 0;
-                        px[2] = 0;
-                        px[3] = 255;
-                    }
-
-                    if let Some(window) = &mut self.window {
-                        let width = window.inner_size().width;
-                        let height = window.inner_size().height;
-                    }
-
+                    frame.copy_from_slice(&self.renderer.buffer);
                     pixels.render().unwrap();
                 }
             }
             WindowEvent::Resized(size) => {
+                self.renderer = Renderer::new(size.width as usize, size.height as usize);
                 if let Some(pixels) = &mut self.pixels {
                     pixels.resize_surface(size.width, size.height).unwrap();
+                    pixels.resize_buffer(size.width, size.height).unwrap();
                 }
             }
             WindowEvent::CloseRequested => {
@@ -88,6 +110,6 @@ fn main() {
     let event_loop = EventLoop::new().unwrap();
     event_loop.set_control_flow(winit::event_loop::ControlFlow::Poll);
 
-    let mut app = App::default();
+    let mut app = App::new(800, 600);
     event_loop.run_app(&mut app).unwrap();
 }
