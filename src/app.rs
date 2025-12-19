@@ -1,4 +1,4 @@
-use std::sync::Arc;
+use std::{f64::consts::PI, sync::Arc};
 
 use winit::{
     application::ApplicationHandler,
@@ -12,13 +12,15 @@ use pixels::{Pixels, SurfaceTexture};
 use crate::renderer::Renderer;
 use crate::vertex::Vertex;
 
+const CAMERA_DISTANCE: usize = 10;
+
 #[derive(Debug)]
 pub struct App {
     window: Option<Arc<Window>>,
     pixels: Option<Pixels<'static>>,
     renderer: Renderer,
     vertices: Vec<Vertex>,
-    edges: Vec<(u8, u8)>,
+    edges: Vec<(usize, usize)>,
     angles: (f32, f32, f32),
 }
 
@@ -35,69 +37,69 @@ impl App {
     }
 
     pub fn rotate_vertex(&self, vertex: &Vertex) -> Vertex {
-        let center = Vertex {
+        let centre = Vertex {
             x: 0.0,
             y: 0.0,
             z: 10.0,
         };
 
         let mut rotated = Vertex {
-            x: vertex.x - center.x,
-            y: vertex.y - center.y,
-            z: vertex.z - center.z,
+            x: vertex.x - centre.x,
+            y: vertex.y - centre.y,
+            z: vertex.z - centre.z,
         };
 
         rotated = self.renderer.rotate_x(&rotated, self.angles.0);
         rotated = self.renderer.rotate_y(&rotated, self.angles.1);
         rotated = self.renderer.rotate_z(&rotated, self.angles.2);
         Vertex {
-            x: rotated.x + center.x,
-            y: rotated.y + center.y,
-            z: rotated.z + center.z,
+            x: rotated.x + centre.x,
+            y: rotated.y + centre.y,
+            z: rotated.z + centre.z,
         }
     }
 
-    fn create_cube(&mut self) {
+    fn create_box(&mut self, centre_x: f64, centre_y: f64, size: f64) {
         let mut vertices = vec![
             Vertex {
-                x: -1.0,
-                y: -1.0,
-                z: 11.0,
+                x: centre_x - size,
+                y: centre_y - size,
+                z: CAMERA_DISTANCE as f64 + 1.0,
             },
             Vertex {
-                x: 1.0,
-                y: -1.0,
-                z: 11.0,
+                x: centre_x + size,
+                y: centre_y - size,
+                z: CAMERA_DISTANCE as f64 + 1.0,
             },
             Vertex {
-                x: 1.0,
-                y: 1.0,
-                z: 11.0,
+                x: centre_x + size,
+                y: centre_y + size,
+                z: CAMERA_DISTANCE as f64 + 1.0,
             },
             Vertex {
-                x: -1.0,
-                y: 1.0,
-                z: 11.0,
+                x: centre_x - size,
+                y: centre_y + size,
+                z: CAMERA_DISTANCE as f64 + 1.0,
             },
             Vertex {
-                x: -1.0,
-                y: -1.0,
-                z: 9.0,
+                x: centre_x - size,
+                y: centre_y - size,
+                z: CAMERA_DISTANCE as f64 - 1.0,
             },
             Vertex {
-                x: 1.0,
-                y: -1.0,
-                z: 9.0,
+                x: centre_x + size,
+                y: centre_y - size,
+                z: CAMERA_DISTANCE as f64 - 1.0,
             },
             Vertex {
-                x: 1.0,
-                y: 1.0,
-                z: 9.0,
+                x: centre_x + size,
+                y: centre_y + size,
+                z: CAMERA_DISTANCE as f64 - 1.0,
             },
             Vertex {
-                x: -1.0,
-                y: 1.0,
-                z: 9.0,
+                x: centre_x - size,
+                y: centre_y + size,
+                z: CAMERA_DISTANCE as f64 - 1.0,
             },
         ];
         self.vertices.append(&mut vertices);
@@ -117,6 +119,42 @@ impl App {
             (3, 7),
         ];
         self.edges.append(&mut edges);
+    }
+
+    fn create_sphere(&mut self, radius: f64, segments: usize) {
+        self.vertices.clear();
+        self.edges.clear();
+
+        for i in 0..=segments {
+            let theta = i as f64 * PI / segments as f64;
+
+            for j in 0..segments {
+                let phi = j as f64 * 2.0 * PI / segments as f64;
+
+                let x = radius * theta.sin() * phi.cos();
+                let y = radius * theta.cos();
+                let z = radius * theta.sin() * phi.sin() + CAMERA_DISTANCE as f64;
+
+                self.vertices.push(Vertex { x, y, z });
+            }
+        }
+
+        let ring_size = segments;
+
+        for i in 0..=segments {
+            for j in 0..segments {
+                let current = i * ring_size + j;
+
+                let next_j = (j + 1) % ring_size;
+                let horizontal = i * ring_size + next_j;
+                self.edges.push((current, horizontal));
+
+                if i < segments {
+                    let vertical = (i + 1) * ring_size + j;
+                    self.edges.push((current, vertical));
+                }
+            }
+        }
     }
 }
 
@@ -151,7 +189,7 @@ impl ApplicationHandler for App {
         self.window = Some(window);
         self.pixels = Some(pixels);
 
-        self.create_cube();
+        self.create_sphere(5.0, 40);
     }
 
     fn window_event(
