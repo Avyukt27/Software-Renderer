@@ -1,6 +1,108 @@
 use crate::vertex::Vertex;
+use std::f64::consts::PI;
 
+#[derive(Debug)]
 pub struct Mesh {
-    vertices: Vec<Vertex>,
-    edges: Vec<(usize, usize)>,
+    pub vertices: Vec<Vertex>,
+    pub edges: Vec<(usize, usize)>,
+}
+
+impl Mesh {
+    fn create_box(&mut self, centre_x: f64, centre_y: f64, size: f64, depth: f64) {
+        let mut vertices = vec![
+            Vertex {
+                x: centre_x - size,
+                y: centre_y - size,
+                z: depth + 1.0,
+            },
+            Vertex {
+                x: centre_x + size,
+                y: centre_y - size,
+                z: depth + 1.0,
+            },
+            Vertex {
+                x: centre_x + size,
+                y: centre_y + size,
+                z: depth + 1.0,
+            },
+            Vertex {
+                x: centre_x - size,
+                y: centre_y + size,
+                z: depth + 1.0,
+            },
+            Vertex {
+                x: centre_x - size,
+                y: centre_y - size,
+                z: depth - 1.0,
+            },
+            Vertex {
+                x: centre_x + size,
+                y: centre_y - size,
+                z: depth - 1.0,
+            },
+            Vertex {
+                x: centre_x + size,
+                y: centre_y + size,
+                z: depth - 1.0,
+            },
+            Vertex {
+                x: centre_x - size,
+                y: centre_y + size,
+                z: depth - 1.0,
+            },
+        ];
+        self.vertices.append(&mut vertices);
+
+        let mut edges = vec![
+            (0, 1),
+            (1, 2),
+            (2, 3),
+            (3, 0),
+            (4, 5),
+            (5, 6),
+            (6, 7),
+            (7, 4),
+            (0, 4),
+            (1, 5),
+            (2, 6),
+            (3, 7),
+        ];
+        self.edges.append(&mut edges);
+    }
+
+    fn create_sphere(&mut self, radius: f64, segments: usize, depth: f64) {
+        self.vertices.clear();
+        self.edges.clear();
+
+        for i in 0..=segments {
+            let theta = i as f64 * PI / segments as f64;
+
+            for j in 0..segments {
+                let phi = j as f64 * 2.0 * PI / segments as f64;
+
+                let x = radius * theta.sin() * phi.cos();
+                let y = radius * theta.cos();
+                let z = radius * theta.sin() * phi.sin() + depth;
+
+                self.vertices.push(Vertex { x, y, z });
+            }
+        }
+
+        let ring_size = segments;
+
+        for i in 0..=segments {
+            for j in 0..segments {
+                let current = i * ring_size + j;
+
+                let next_j = (j + 1) % ring_size;
+                let horizontal = i * ring_size + next_j;
+                self.edges.push((current, horizontal));
+
+                if i < segments {
+                    let vertical = (i + 1) * ring_size + j;
+                    self.edges.push((current, vertical));
+                }
+            }
+        }
+    }
 }
