@@ -2,20 +2,28 @@ use std::sync::Arc;
 
 use winit::{
     application::ApplicationHandler,
-    event::WindowEvent,
+    event::{KeyEvent, WindowEvent},
     event_loop::ActiveEventLoop,
+    keyboard::{Key, NamedKey},
     window::{Window, WindowAttributes},
 };
 
 use pixels::{Pixels, SurfaceTexture};
 
-use crate::{math::rotate_vertices, mesh::Mesh, renderer::Renderer, vertex::Vertex};
+use crate::{
+    camera::Camera,
+    math::{apply_camera, rotate_vertices},
+    mesh::Mesh,
+    renderer::Renderer,
+    vertex::Vertex,
+};
 
 #[derive(Debug)]
 pub struct App {
     window: Option<Arc<Window>>,
     pixels: Option<Pixels<'static>>,
     renderer: Renderer,
+    camera: Camera,
     meshes: Vec<Mesh>,
     angles: (f32, f32, f32),
 }
@@ -26,6 +34,15 @@ impl App {
             window: None,
             pixels: None,
             renderer: Renderer::new(width, height),
+            camera: Camera {
+                position: Vertex {
+                    x: 0.0,
+                    y: 0.0,
+                    z: 0.0,
+                },
+                rotation: (0.0, 0.0, 0.0),
+                zoom: 1.0,
+            },
             meshes: Vec::new(),
             angles: (0.0, 0.0, 0.0),
         }
@@ -77,6 +94,30 @@ impl ApplicationHandler for App {
         event: WindowEvent,
     ) {
         match event {
+            WindowEvent::KeyboardInput {
+                event: KeyEvent {
+                    logical_key, state, ..
+                },
+                ..
+            } => {
+                if state.is_pressed() {
+                    match logical_key {
+                        Key::Named(NamedKey::ArrowUp) => {
+                            println!("Up Arrow Pressed!")
+                        }
+                        Key::Named(NamedKey::ArrowDown) => {
+                            println!("Up Arrow Pressed!")
+                        }
+                        Key::Named(NamedKey::ArrowLeft) => {
+                            println!("Up Arrow Pressed!")
+                        }
+                        Key::Named(NamedKey::ArrowRight) => {
+                            println!("Up Arrow Pressed!")
+                        }
+                        _ => {}
+                    }
+                }
+            }
             WindowEvent::RedrawRequested => {
                 self.renderer.clear(0, 0, 0, 255);
 
@@ -87,7 +128,7 @@ impl ApplicationHandler for App {
                 for mesh in &self.meshes {
                     let rotated_vertices = rotate_vertices(&mesh.vertices, self.angles);
 
-                    let transformed_vertices: Vec<Vertex> = rotated_vertices
+                    let world_vertices: Vec<Vertex> = rotated_vertices
                         .iter()
                         .map(|v| Vertex {
                             x: v.x + mesh.centre.x,
@@ -96,14 +137,19 @@ impl ApplicationHandler for App {
                         })
                         .collect();
 
-                    for vertex in transformed_vertices.iter() {
+                    let view_vertices: Vec<Vertex> = world_vertices
+                        .iter()
+                        .map(|v| apply_camera(v, &self.camera))
+                        .collect();
+
+                    for vertex in view_vertices.iter() {
                         self.renderer.draw_vertex(vertex);
                     }
 
                     for &(from, to) in &mesh.edges {
                         self.renderer.draw_edge(
-                            &transformed_vertices[from],
-                            &transformed_vertices[to],
+                            &view_vertices[from],
+                            &view_vertices[to],
                             255,
                             255,
                             255,
