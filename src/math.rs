@@ -1,4 +1,4 @@
-use crate::vertex::{self, Vertex};
+use crate::vertex::Vertex;
 
 pub fn rotate_x(vertex: &Vertex, angle: f32) -> Vertex {
     let sin = angle.sin() as f64;
