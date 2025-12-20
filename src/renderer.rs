@@ -118,23 +118,15 @@ impl Renderer {
             return None;
         }
 
-        let fov = 60.0_f32.to_radians();
-        let f = 1.0 / (fov / 2.0).tan() as f64;
+        let scale = 50.0;
 
-        let x_ndc = (vertex.x * f) / vertex.z;
-        let y_ndc = (vertex.y * f) / vertex.z;
+        let x = (vertex.x * scale + self.width as f64 / 2.0) as isize;
+        let y = (-vertex.y * scale + self.height as f64 / 2.0) as isize;
 
-        let x_screen = ((x_ndc + 1.0) * 0.5 * self.width as f64) as isize;
-        let y_screen = ((1.0 - y_ndc) * 0.5 * self.height as f64) as isize;
-
-        if x_screen < 0
-            || y_screen < 0
-            || x_screen >= self.width as isize
-            || y_screen >= self.height as isize
-        {
+        if x < 0 || y < 0 || x >= self.width as isize || y >= self.height as isize {
             return None;
         }
 
-        Some((x_screen as usize, y_screen as usize))
+        Some((x as usize, y as usize))
     }
 }
