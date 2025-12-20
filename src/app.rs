@@ -9,12 +9,7 @@ use winit::{
 
 use pixels::{Pixels, SurfaceTexture};
 
-use crate::{
-    math::{rotate_vertex, rotate_vertices},
-    mesh::Mesh,
-    renderer::Renderer,
-    vertex::Vertex,
-};
+use crate::{math::rotate_vertices, mesh::Mesh, renderer::Renderer, vertex::Vertex};
 
 #[derive(Debug)]
 pub struct App {
@@ -68,10 +63,10 @@ impl ApplicationHandler for App {
         self.window = Some(window);
         self.pixels = Some(pixels);
 
-        let cube = Mesh::cube(-5.0, -5.0, 1.0, 10.0);
+        let cube = Mesh::cube(0.0, 1.0, 10.0, 1.0);
         self.meshes.push(cube);
 
-        let sphere = Mesh::sphere(5.0, 5.0, 3.0, 20, 10.0);
+        let sphere = Mesh::sphere(0.0, -1.0, 10.0, 1.0, 12);
         self.meshes.push(sphere);
     }
 
@@ -89,20 +84,26 @@ impl ApplicationHandler for App {
                 self.angles.1 += 0.015;
                 self.angles.2 += 0.012;
 
-                let mut transformed_vertices: Vec<Vertex> = Vec::new();
-
                 for mesh in &self.meshes {
-                    let mut rotated_vertices = rotate_vertices(&mesh.vertices, self.angles);
-                    transformed_vertices.append(&mut rotated_vertices);
+                    let rotated_vertices = rotate_vertices(&mesh.vertices, self.angles);
+
+                    let transformed_vertices: Vec<Vertex> = rotated_vertices
+                        .iter()
+                        .map(|v| Vertex {
+                            x: v.x + mesh.centre.x,
+                            y: v.y + mesh.centre.y,
+                            z: v.z + mesh.centre.z,
+                        })
+                        .collect();
 
                     for vertex in transformed_vertices.iter() {
                         self.renderer.draw_vertex(vertex);
                     }
 
-                    for edge in mesh.edges.iter() {
+                    for &(from, to) in &mesh.edges {
                         self.renderer.draw_edge(
-                            &transformed_vertices[edge.0],
-                            &transformed_vertices[edge.1],
+                            &transformed_vertices[from],
+                            &transformed_vertices[to],
                             255,
                             255,
                             255,
