@@ -20,7 +20,14 @@ impl Mesh {
         mesh.create_box(centre_x, centre_y, size, depth);
         mesh
     }
+
+    pub fn sphere(centre_x: f64, centre_y: f64, radius: f64, segments: usize, depth: f64) -> Self {
+        let mut mesh = Self::new();
+        mesh.create_sphere(centre_x, centre_y, radius, segments, depth);
+        mesh
+    }
 }
+
 impl Mesh {
     fn create_box(&mut self, centre_x: f64, centre_y: f64, size: f64, depth: f64) {
         let mut vertices = vec![
