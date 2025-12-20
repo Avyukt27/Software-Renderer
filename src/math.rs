@@ -49,9 +49,20 @@ pub fn rotate_vertex(vertex: &Vertex, angles: (f32, f32, f32)) -> Vertex {
     rotated = rotate_x(&rotated, angles.0);
     rotated = rotate_y(&rotated, angles.1);
     rotated = rotate_z(&rotated, angles.2);
+
     Vertex {
         x: rotated.x + centre.x,
         y: rotated.y + centre.y,
         z: rotated.z + centre.z,
     }
+}
+
+pub fn rotate_vertices(vertices: &Vec<Vertex>, angles: (f32, f32, f32)) -> Vec<Vertex> {
+    let mut transformed_vertices: Vec<Vertex> = vec![];
+
+    for vertex in vertices.iter() {
+        transformed_vertices.push(rotate_vertex(&vertex, angles));
+    }
+
+    return transformed_vertices;
 }

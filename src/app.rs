@@ -9,7 +9,12 @@ use winit::{
 
 use pixels::{Pixels, SurfaceTexture};
 
-use crate::{math::rotate_vertex, mesh::Mesh, renderer::Renderer, vertex::Vertex};
+use crate::{
+    math::{rotate_vertex, rotate_vertices},
+    mesh::Mesh,
+    renderer::Renderer,
+    vertex::Vertex,
+};
 
 #[derive(Debug)]
 pub struct App {
@@ -26,7 +31,7 @@ impl App {
             window: None,
             pixels: None,
             renderer: Renderer::new(width, height),
-            meshes: vec![],
+            meshes: Vec::new(),
             angles: (0.0, 0.0, 0.0),
         }
     }
@@ -62,6 +67,9 @@ impl ApplicationHandler for App {
 
         self.window = Some(window);
         self.pixels = Some(pixels);
+
+        let cube = Mesh::cube(0.0, 0.0, 1.0, 10.0);
+        self.meshes.push(cube);
     }
 
     fn window_event(
@@ -78,11 +86,25 @@ impl ApplicationHandler for App {
                 self.angles.1 += 0.015;
                 self.angles.2 += 0.012;
 
-                let mut transformed_vertices: Vec<Vertex> = vec![];
+                let mut transformed_vertices: Vec<Vertex> = Vec::new();
 
-                for mesh in &mut self.meshes {
-                    for vertex in &mut mesh.vertices {
-                        transformed_vertices.push(rotate_vertex(&vertex));
+                for mesh in &self.meshes {
+                    let mut rotated_vertices = rotate_vertices(&mesh.vertices, self.angles);
+                    transformed_vertices.append(&mut rotated_vertices);
+
+                    for vertex in transformed_vertices.iter() {
+                        self.renderer.draw_vertex(vertex);
+                    }
+
+                    for edge in mesh.edges.iter() {
+                        self.renderer.draw_edge(
+                            &transformed_vertices[edge.0],
+                            &transformed_vertices[edge.1],
+                            255,
+                            255,
+                            255,
+                            255,
+                        );
                     }
                 }
 

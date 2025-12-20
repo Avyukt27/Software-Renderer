@@ -8,6 +8,20 @@ pub struct Mesh {
 }
 
 impl Mesh {
+    pub fn new() -> Self {
+        Self {
+            vertices: Vec::new(),
+            edges: Vec::new(),
+        }
+    }
+
+    pub fn cube(centre_x: f64, centre_y: f64, size: f64, depth: f64) -> Self {
+        let mut mesh = Self::new();
+        mesh.create_box(centre_x, centre_y, size, depth);
+        mesh
+    }
+}
+impl Mesh {
     fn create_box(&mut self, centre_x: f64, centre_y: f64, size: f64, depth: f64) {
         let mut vertices = vec![
             Vertex {
@@ -70,7 +84,14 @@ impl Mesh {
         self.edges.append(&mut edges);
     }
 
-    fn create_sphere(&mut self, radius: f64, segments: usize, depth: f64) {
+    fn create_sphere(
+        &mut self,
+        centre_x: f64,
+        centre_y: f64,
+        radius: f64,
+        segments: usize,
+        depth: f64,
+    ) {
         self.vertices.clear();
         self.edges.clear();
 
@@ -80,8 +101,8 @@ impl Mesh {
             for j in 0..segments {
                 let phi = j as f64 * 2.0 * PI / segments as f64;
 
-                let x = radius * theta.sin() * phi.cos();
-                let y = radius * theta.cos();
+                let x = radius * theta.sin() * phi.cos() + centre_x;
+                let y = radius * theta.cos() + centre_y;
                 let z = radius * theta.sin() * phi.sin() + depth;
 
                 self.vertices.push(Vertex { x, y, z });
