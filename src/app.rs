@@ -68,8 +68,11 @@ impl ApplicationHandler for App {
         self.window = Some(window);
         self.pixels = Some(pixels);
 
-        let cube = Mesh::cube(0.0, 0.0, 1.0, 10.0);
+        let cube = Mesh::cube(-5.0, -5.0, 1.0, 10.0);
         self.meshes.push(cube);
+
+        let sphere = Mesh::sphere(5.0, 5.0, 3.0, 20, 10.0);
+        self.meshes.push(sphere);
     }
 
     fn window_event(
