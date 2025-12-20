@@ -5,6 +5,7 @@ use std::f64::consts::PI;
 pub struct Mesh {
     pub vertices: Vec<Vertex>,
     pub edges: Vec<(usize, usize)>,
+    pub centre: Vertex,
 }
 
 impl Mesh {
@@ -12,64 +13,81 @@ impl Mesh {
         Self {
             vertices: Vec::new(),
             edges: Vec::new(),
+            centre: Vertex::default(),
         }
     }
 
-    pub fn cube(centre_x: f64, centre_y: f64, size: f64, depth: f64) -> Self {
+    pub fn cube(centre_x: f64, centre_y: f64, centre_z: f64, size: f64) -> Self {
         let mut mesh = Self::new();
-        mesh.create_box(centre_x, centre_y, size, depth);
+        mesh.create_box(size);
+        mesh.centre = Vertex {
+            x: centre_x,
+            y: centre_y,
+            z: centre_z,
+        };
         mesh
     }
 
-    pub fn sphere(centre_x: f64, centre_y: f64, radius: f64, segments: usize, depth: f64) -> Self {
+    pub fn sphere(
+        centre_x: f64,
+        centre_y: f64,
+        centre_z: f64,
+        radius: f64,
+        segments: usize,
+    ) -> Self {
         let mut mesh = Self::new();
-        mesh.create_sphere(centre_x, centre_y, radius, segments, depth);
+        mesh.create_sphere(radius, segments);
+        mesh.centre = Vertex {
+            x: centre_x,
+            y: centre_y,
+            z: centre_z,
+        };
         mesh
     }
 }
 
 impl Mesh {
-    fn create_box(&mut self, centre_x: f64, centre_y: f64, size: f64, depth: f64) {
+    fn create_box(&mut self, size: f64) {
         let mut vertices = vec![
             Vertex {
-                x: centre_x - size,
-                y: centre_y - size,
-                z: depth + 1.0,
+                x: -size / 2.0,
+                y: -size / 2.0,
+                z: size / 2.0,
             },
             Vertex {
-                x: centre_x + size,
-                y: centre_y - size,
-                z: depth + 1.0,
+                x: size / 2.0,
+                y: -size / 2.0,
+                z: size / 2.0,
             },
             Vertex {
-                x: centre_x + size,
-                y: centre_y + size,
-                z: depth + 1.0,
+                x: size / 2.0,
+                y: size / 2.0,
+                z: size / 2.0,
             },
             Vertex {
-                x: centre_x - size,
-                y: centre_y + size,
-                z: depth + 1.0,
+                x: -size / 2.0,
+                y: size / 2.0,
+                z: size / 2.0,
             },
             Vertex {
-                x: centre_x - size,
-                y: centre_y - size,
-                z: depth - 1.0,
+                x: -size / 2.0,
+                y: -size / 2.0,
+                z: -size / 2.0,
             },
             Vertex {
-                x: centre_x + size,
-                y: centre_y - size,
-                z: depth - 1.0,
+                x: size / 2.0,
+                y: -size / 2.0,
+                z: -size / 2.0,
             },
             Vertex {
-                x: centre_x + size,
-                y: centre_y + size,
-                z: depth - 1.0,
+                x: size / 2.0,
+                y: size / 2.0,
+                z: -size / 2.0,
             },
             Vertex {
-                x: centre_x - size,
-                y: centre_y + size,
-                z: depth - 1.0,
+                x: -size / 2.0,
+                y: size / 2.0,
+                z: -size / 2.0,
             },
         ];
         self.vertices.append(&mut vertices);
@@ -91,14 +109,7 @@ impl Mesh {
         self.edges.append(&mut edges);
     }
 
-    fn create_sphere(
-        &mut self,
-        centre_x: f64,
-        centre_y: f64,
-        radius: f64,
-        segments: usize,
-        depth: f64,
-    ) {
+    fn create_sphere(&mut self, radius: f64, segments: usize) {
         self.vertices.clear();
         self.edges.clear();
 
@@ -108,9 +119,9 @@ impl Mesh {
             for j in 0..segments {
                 let phi = j as f64 * 2.0 * PI / segments as f64;
 
-                let x = radius * theta.sin() * phi.cos() + centre_x;
-                let y = radius * theta.cos() + centre_y;
-                let z = radius * theta.sin() * phi.sin() + depth;
+                let x = radius * theta.sin() * phi.cos();
+                let y = radius * theta.cos();
+                let z = radius * theta.sin() * phi.sin();
 
                 self.vertices.push(Vertex { x, y, z });
             }
