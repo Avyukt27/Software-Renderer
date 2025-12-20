@@ -106,14 +106,18 @@ impl ApplicationHandler for App {
                             println!("Up Arrow Pressed!")
                         }
                         Key::Named(NamedKey::ArrowDown) => {
-                            println!("Up Arrow Pressed!")
+                            println!("Down Arrow Pressed!")
                         }
                         Key::Named(NamedKey::ArrowLeft) => {
-                            println!("Up Arrow Pressed!")
+                            println!("Left Arrow Pressed!")
                         }
                         Key::Named(NamedKey::ArrowRight) => {
-                            println!("Up Arrow Pressed!")
+                            println!("Right Arrow Pressed!")
                         }
+                        Key::Character(ref c) if c == "w" => self.camera.position.z += 0.2,
+                        Key::Character(ref c) if c == "a" => self.camera.position.x -= 0.2,
+                        Key::Character(ref c) if c == "s" => self.camera.position.z -= 0.2,
+                        Key::Character(ref c) if c == "d" => self.camera.position.x += 0.2,
                         _ => {}
                     }
                 }
