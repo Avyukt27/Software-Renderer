@@ -63,11 +63,11 @@ impl ApplicationHandler for App {
         self.window = Some(window);
         self.pixels = Some(pixels);
 
-        let cube = Mesh::cube(0.0, 1.0, 10.0, 1.0);
-        self.meshes.push(cube);
-
-        let sphere = Mesh::sphere(0.0, -1.0, 10.0, 1.0, 12);
-        self.meshes.push(sphere);
+        let mut meshes = vec![
+            Mesh::cube(0.0, 5.0, 10.0, 1.0),
+            Mesh::sphere(0.0, -1.0, 10.0, 5.0, 12),
+        ];
+        self.meshes.append(&mut meshes);
     }
 
     fn window_event(
