@@ -64,9 +64,14 @@ impl Renderer {
     }
 
     pub fn draw_vertex(&mut self, vertex: &Vertex) {
-        if let Some((x, y)) = self.project(vertex) {
-            self.put_circle(x, y, 5, 255, 255, 255, 255);
+        let x = vertex.x as isize;
+        let y = vertex.y as isize;
+
+        if x < 0 || y < 0 || x >= self.width as isize || y >= self.height as isize {
+            return;
         }
+
+        self.put_circle(x as usize, y as usize, 5, 255, 255, 255, 255);
     }
 
     pub fn draw_edge(
@@ -78,55 +83,33 @@ impl Renderer {
         blue: u8,
         alpha: u8,
     ) {
-        let projected_1 = match self.project(vertex_1) {
-            Some(vertex) => vertex,
-            None => return,
-        };
-        let projected_2 = match self.project(vertex_2) {
-            Some(vertex) => vertex,
-            None => return,
-        };
+        let (mut x1, mut y1) = (vertex_1.x as isize, vertex_1.y as isize);
+        let (x2, y2) = (vertex_2.x as isize, vertex_2.y as isize);
 
-        let (mut x1, mut y1) = projected_1;
-        let (x2, y2) = projected_2;
-
-        let dx = (x2 as isize - x1 as isize).abs();
-        let dy = -(y2 as isize - y1 as isize).abs();
+        let dx = (x2 - x1).abs();
+        let dy = -(y2 - y1).abs();
         let sx = if x1 < x2 { 1 } else { -1 };
         let sy = if y1 < y2 { 1 } else { -1 };
         let mut err = dx + dy;
 
         loop {
-            self.put_pixel(x1, y1, red, green, blue, alpha);
+            if x1 >= 0 && y1 >= 0 && x1 < self.width as isize && y1 < self.height as isize {
+                self.put_pixel(x1 as usize, y1 as usize, red, green, blue, alpha);
+            }
+
             if x1 == x2 && y1 == y2 {
                 break;
             }
-            let err_2 = 2 * err;
-            if err_2 >= dy {
+
+            let e2 = 2 * err;
+            if e2 >= dy {
                 err += dy;
-                x1 = (x1 as isize + sx) as usize;
+                x1 += sx;
             }
-            if err_2 <= dx {
+            if e2 <= dx {
                 err += dx;
-                y1 = (y1 as isize + sy) as usize;
+                y1 += sy;
             }
         }
-    }
-
-    pub fn project(&self, vertex: &Vertex) -> Option<(usize, usize)> {
-        if vertex.z <= 0.0 {
-            return None;
-        }
-
-        let scale = 50.0;
-
-        let x = (vertex.x * scale + self.width as f64 / 2.0) as isize;
-        let y = (-vertex.y * scale + self.height as f64 / 2.0) as isize;
-
-        if x < 0 || y < 0 || x >= self.width as isize || y >= self.height as isize {
-            return None;
-        }
-
-        Some((x as usize, y as usize))
     }
 }

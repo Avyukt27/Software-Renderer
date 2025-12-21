@@ -11,11 +11,7 @@ use winit::{
 use pixels::{Pixels, SurfaceTexture};
 
 use crate::{
-    camera::Camera,
-    math::{apply_camera, rotate_vertices},
-    mesh::Mesh,
-    renderer::Renderer,
-    vertex::Vertex,
+    camera::Camera, math::rotate_vertices, mesh::Mesh, renderer::Renderer, vertex::Vertex,
 };
 
 #[derive(Debug)]
@@ -106,9 +102,9 @@ impl ApplicationHandler for App {
                         Key::Named(NamedKey::ArrowRight) => {
                             println!("Right Arrow Pressed!")
                         }
-                        Key::Character(ref c) if c == "w" => self.camera.position.y += 0.2,
+                        Key::Character(ref c) if c == "w" => self.camera.position.z += 0.2,
                         Key::Character(ref c) if c == "a" => self.camera.position.x -= 0.2,
-                        Key::Character(ref c) if c == "s" => self.camera.position.y -= 0.2,
+                        Key::Character(ref c) if c == "s" => self.camera.position.z -= 0.2,
                         Key::Character(ref c) if c == "d" => self.camera.position.x += 0.2,
                         _ => {}
                     }
@@ -133,24 +129,21 @@ impl ApplicationHandler for App {
                         })
                         .collect();
 
-                    let view_vertices: Vec<Vertex> = world_vertices
+                    let view_vertices: Vec<Option<Vertex>> = world_vertices
                         .iter()
-                        .map(|v| apply_camera(v, &self.camera))
+                        .map(|v| self.camera.project_perspective(v))
                         .collect();
 
                     for vertex in view_vertices.iter() {
-                        self.renderer.draw_vertex(vertex);
+                        if let Some(v) = vertex {
+                            self.renderer.draw_vertex(v);
+                        }
                     }
 
                     for &(from, to) in &mesh.edges {
-                        self.renderer.draw_edge(
-                            &view_vertices[from],
-                            &view_vertices[to],
-                            255,
-                            255,
-                            255,
-                            255,
-                        );
+                        if let (Some(v1), Some(v2)) = (&view_vertices[from], &view_vertices[to]) {
+                            self.renderer.draw_edge(v1, v2, 255, 255, 255, 255);
+                        }
                     }
                 }
 
