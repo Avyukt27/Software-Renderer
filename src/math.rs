@@ -1,4 +1,4 @@
-use crate::{camera::Camera, vertex::Vertex};
+use crate::vertex::Vertex;
 
 pub fn rotate_x(vertex: &Vertex, angle: f32) -> Vertex {
     let sin = angle.sin() as f64;
@@ -33,16 +33,28 @@ pub fn rotate_z(vertex: &Vertex, angle: f32) -> Vertex {
     }
 }
 
-pub fn rotate_vertex(vertex: &Vertex, angles: (f32, f32, f32)) -> Vertex {
+pub fn rotate_vertex(vertex: &Vertex, rotation: (f32, f32, f32)) -> Vertex {
     let mut rotated = *vertex;
 
-    rotated = rotate_x(&rotated, angles.0);
-    rotated = rotate_y(&rotated, angles.1);
-    rotated = rotate_z(&rotated, angles.2);
+    rotated = rotate_x(&rotated, rotation.0);
+    rotated = rotate_y(&rotated, rotation.1);
+    rotated = rotate_z(&rotated, rotation.2);
 
     rotated
 }
 
-pub fn rotate_vertices(vertices: &[Vertex], angles: (f32, f32, f32)) -> Vec<Vertex> {
-    vertices.iter().map(|v| rotate_vertex(v, angles)).collect()
+pub fn rotate_around_pivot(vertex: &Vertex, pivot: &Vertex, rotation: (f32, f32, f32)) -> Vertex {
+    let mut v = Vertex {
+        x: vertex.x - pivot.x,
+        y: vertex.y - pivot.y,
+        z: vertex.z - pivot.z,
+    };
+
+    v = rotate_vertex(&v, rotation);
+
+    Vertex {
+        x: v.x + pivot.x,
+        y: v.y + pivot.y,
+        z: v.z + pivot.z,
+    }
 }

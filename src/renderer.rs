@@ -71,7 +71,7 @@ impl Renderer {
             return;
         }
 
-        self.put_circle(x as usize, y as usize, 5, 255, 255, 255, 255);
+        self.put_circle(x as usize, y as usize, 1, 255, 255, 255, 255);
     }
 
     pub fn draw_edge(

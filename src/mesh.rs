@@ -6,6 +6,8 @@ pub struct Mesh {
     pub vertices: Vec<Vertex>,
     pub edges: Vec<(usize, usize)>,
     pub centre: Vertex,
+    pub rotate_around_pivot: bool,
+    pub pivot: Option<Vertex>,
 }
 
 impl Mesh {
@@ -14,6 +16,8 @@ impl Mesh {
             vertices: Vec::new(),
             edges: Vec::new(),
             centre: Vertex::default(),
+            rotate_around_pivot: false,
+            pivot: None,
         }
     }
 
