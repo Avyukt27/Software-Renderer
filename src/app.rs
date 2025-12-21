@@ -102,10 +102,12 @@ impl ApplicationHandler for App {
                         Key::Named(NamedKey::ArrowRight) => {
                             println!("Right Arrow Pressed!")
                         }
-                        Key::Character(ref c) if c == "w" => self.camera.position.z += 0.2,
-                        Key::Character(ref c) if c == "a" => self.camera.position.x -= 0.2,
-                        Key::Character(ref c) if c == "s" => self.camera.position.z -= 0.2,
+                        Key::Character(ref c) if c == "w" => self.camera.position.y += 0.2,
+                        Key::Character(ref c) if c == "s" => self.camera.position.y -= 0.2,
                         Key::Character(ref c) if c == "d" => self.camera.position.x += 0.2,
+                        Key::Character(ref c) if c == "a" => self.camera.position.x -= 0.2,
+                        Key::Character(ref c) if c == "q" => self.camera.position.z += 0.2,
+                        Key::Character(ref c) if c == "e" => self.camera.position.z -= 0.2,
                         _ => {}
                     }
                 }
@@ -134,10 +136,8 @@ impl ApplicationHandler for App {
                         .map(|v| self.camera.project_perspective(v))
                         .collect();
 
-                    for vertex in view_vertices.iter() {
-                        if let Some(v) = vertex {
-                            self.renderer.draw_vertex(v);
-                        }
+                    for vertex in view_vertices.iter().flatten() {
+                        self.renderer.draw_vertex(vertex);
                     }
 
                     for &(from, to) in &mesh.edges {
