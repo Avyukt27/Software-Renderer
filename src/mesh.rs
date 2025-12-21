@@ -5,6 +5,7 @@ use std::f64::consts::PI;
 pub struct Mesh {
     pub vertices: Vec<Vertex>,
     pub edges: Vec<(usize, usize)>,
+    pub triangles: Vec<(usize, usize, usize)>,
     pub centre: Vertex,
     pub rotate_around_pivot: bool,
     pub pivot: Option<Vertex>,
@@ -15,6 +16,7 @@ impl Mesh {
         Self {
             vertices: Vec::new(),
             edges: Vec::new(),
+            triangles: Vec::new(),
             centre: Vertex::default(),
             rotate_around_pivot: false,
             pivot: None,
@@ -23,7 +25,7 @@ impl Mesh {
 
     pub fn cube(centre_x: f64, centre_y: f64, centre_z: f64, size: f64) -> Self {
         let mut mesh = Self::new();
-        mesh.create_box(size);
+        mesh.create_cube(size);
         mesh.centre = Vertex {
             x: centre_x,
             y: centre_y,
@@ -51,7 +53,7 @@ impl Mesh {
 }
 
 impl Mesh {
-    fn create_box(&mut self, size: f64) {
+    fn create_cube(&mut self, size: f64) {
         let mut vertices = vec![
             Vertex {
                 x: -size / 2.0,
@@ -96,21 +98,20 @@ impl Mesh {
         ];
         self.vertices.append(&mut vertices);
 
-        let mut edges = vec![
-            (0, 1),
-            (1, 2),
-            (2, 3),
-            (3, 0),
-            (4, 5),
-            (5, 6),
-            (6, 7),
-            (7, 4),
-            (0, 4),
-            (1, 5),
-            (2, 6),
-            (3, 7),
-        ];
-        self.edges.append(&mut edges);
+        self.triangles.extend([
+            (0, 1, 2),
+            (0, 2, 3),
+            (5, 4, 7),
+            (5, 7, 6),
+            (4, 0, 3),
+            (4, 3, 7),
+            (1, 5, 6),
+            (1, 6, 2),
+            (3, 2, 6),
+            (3, 6, 7),
+            (4, 5, 1),
+            (4, 1, 0),
+        ]);
     }
 
     fn create_sphere(&mut self, radius: f64, segments: usize) {

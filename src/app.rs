@@ -72,10 +72,7 @@ impl ApplicationHandler for App {
         self.window = Some(window);
         self.pixels = Some(pixels);
 
-        let mut meshes = vec![
-            Mesh::cube(0.0, 5.0, 10.0, 1.0),
-            Mesh::sphere(0.0, -1.0, 0.0, 5.0, 12),
-        ];
+        let mut meshes = vec![Mesh::cube(0.0, 5.0, 10.0, 10.0)];
 
         let mut orbiting_sphere = Mesh::sphere(10.0, 0.0, 2.0, 1.0, 8);
         orbiting_sphere.rotate_around_pivot = true;
@@ -84,7 +81,7 @@ impl ApplicationHandler for App {
             y: 0.0,
             z: 0.0,
         });
-        meshes.push(orbiting_sphere);
+        // meshes.push(orbiting_sphere);
 
         self.meshes.append(&mut meshes);
     }
@@ -163,8 +160,12 @@ impl ApplicationHandler for App {
                         .map(|v| self.camera.project_perspective(v))
                         .collect();
 
-                    for vertex in view_vertices.iter().flatten() {
-                        self.renderer.draw_vertex(vertex);
+                    for &(i0, i1, i2) in &mesh.triangles {
+                        if let (Some(v0), Some(v1), Some(v2)) =
+                            (&view_vertices[i0], &view_vertices[i1], &view_vertices[i2])
+                        {
+                            self.renderer.draw_triangles(v0, v1, v2);
+                        }
                     }
 
                     for &(from, to) in &mesh.edges {

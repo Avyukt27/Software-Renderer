@@ -58,3 +58,19 @@ pub fn rotate_around_pivot(vertex: &Vertex, pivot: &Vertex, rotation: (f32, f32,
         z: v.z + pivot.z,
     }
 }
+
+pub fn is_back_facing(v0: &Vertex, v1: &Vertex, v2: &Vertex) -> bool {
+    let ax = v1.x - v0.x;
+    let ay = v1.y - v0.y;
+    let az = v1.z - v0.z;
+
+    let bx = v2.x - v0.x;
+    let by = v2.y - v0.y;
+    let bz = v2.z - v0.z;
+
+    let _nx = ay * bz - az * by;
+    let _ny = az * bx - ax * bz;
+    let nz = ax * by - ay * bx;
+
+    nz <= 0.0
+}
