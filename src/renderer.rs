@@ -1,3 +1,4 @@
+use crate::math::is_back_facing;
 use crate::vertex::Vertex;
 
 #[derive(Debug)]
@@ -24,7 +25,9 @@ impl Renderer {
             px[3] = alpha;
         }
     }
+}
 
+impl Renderer {
     pub fn put_pixel(&mut self, x: usize, y: usize, red: u8, green: u8, blue: u8, alpha: u8) {
         if x >= self.width || y >= self.height {
             return;
@@ -62,7 +65,8 @@ impl Renderer {
             }
         }
     }
-
+}
+impl Renderer {
     pub fn draw_vertex(&mut self, vertex: &Vertex) {
         let x = vertex.x as isize;
         let y = vertex.y as isize;
@@ -111,5 +115,15 @@ impl Renderer {
                 y1 += sy;
             }
         }
+    }
+
+    pub fn draw_triangles(&mut self, a: &Vertex, b: &Vertex, c: &Vertex) {
+        if is_back_facing(a, b, c) {
+            return;
+        }
+
+        self.draw_edge(a, b, 255, 255, 255, 255);
+        self.draw_edge(b, c, 255, 255, 255, 255);
+        self.draw_edge(c, a, 255, 255, 255, 255);
     }
 }
