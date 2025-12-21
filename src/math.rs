@@ -46,17 +46,3 @@ pub fn rotate_vertex(vertex: &Vertex, angles: (f32, f32, f32)) -> Vertex {
 pub fn rotate_vertices(vertices: &[Vertex], angles: (f32, f32, f32)) -> Vec<Vertex> {
     vertices.iter().map(|v| rotate_vertex(v, angles)).collect()
 }
-
-pub fn apply_camera(vertex: &Vertex, camera: &Camera) -> Vertex {
-    let mut transformed = Vertex {
-        x: vertex.x - camera.position.x,
-        y: vertex.y - camera.position.y,
-        z: vertex.z - camera.position.z,
-    };
-
-    transformed = rotate_z(&transformed, -camera.rotation.2);
-    transformed = rotate_y(&transformed, -camera.rotation.1);
-    transformed = rotate_x(&transformed, -camera.rotation.0);
-
-    transformed
-}

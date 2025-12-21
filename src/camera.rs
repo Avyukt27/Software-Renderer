@@ -27,4 +27,37 @@ impl Camera {
             screen_height: screen_height,
         }
     }
+
+    pub fn project_orthographic(&self, world: &Vertex) -> Vertex {
+        let x = world.x - self.position.x;
+        let y = world.y - self.position.y;
+
+        Vertex {
+            x: x + self.screen_width as f64 / 2.0,
+            y: y + self.screen_height as f64 / 2.0,
+            z: world.z,
+        }
+    }
+
+    pub fn project_perspective(&self, world: &Vertex) -> Option<Vertex> {
+        let x = world.x - self.position.x;
+        let y = world.y - self.position.y;
+        let z = world.z - self.position.z;
+
+        if z <= self.near {
+            return None;
+        }
+
+        let fov_rad = self.fov.to_radians();
+        let scale = (self.screen_width as f64 / 2.0) / (fov_rad / 2.0).tan();
+
+        let screen_x = (x * scale / z) + self.screen_width as f64 / 2.0;
+        let screen_y = (-y * scale / z) + self.screen_height as f64 / 2.0;
+
+        Some(Vertex {
+            x: screen_x,
+            y: screen_y,
+            z,
+        })
+    }
 }
