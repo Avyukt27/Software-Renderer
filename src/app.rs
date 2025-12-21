@@ -34,15 +34,7 @@ impl App {
             window: None,
             pixels: None,
             renderer: Renderer::new(width, height),
-            camera: Camera {
-                position: Vertex {
-                    x: 0.0,
-                    y: 0.0,
-                    z: 0.0,
-                },
-                rotation: (0.0, 0.0, 0.0),
-                zoom: 1.0,
-            },
+            camera: Camera::new(width, height),
             meshes: Vec::new(),
             angles: (0.0, 0.0, 0.0),
         }
@@ -114,9 +106,9 @@ impl ApplicationHandler for App {
                         Key::Named(NamedKey::ArrowRight) => {
                             println!("Right Arrow Pressed!")
                         }
-                        Key::Character(ref c) if c == "w" => self.camera.position.z += 0.2,
+                        Key::Character(ref c) if c == "w" => self.camera.position.y += 0.2,
                         Key::Character(ref c) if c == "a" => self.camera.position.x -= 0.2,
-                        Key::Character(ref c) if c == "s" => self.camera.position.z -= 0.2,
+                        Key::Character(ref c) if c == "s" => self.camera.position.y -= 0.2,
                         Key::Character(ref c) if c == "d" => self.camera.position.x += 0.2,
                         _ => {}
                     }
