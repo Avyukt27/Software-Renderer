@@ -11,7 +11,11 @@ use winit::{
 use pixels::{Pixels, SurfaceTexture};
 
 use crate::{
-    camera::Camera, math::rotate_vertices, mesh::Mesh, renderer::Renderer, vertex::Vertex,
+    camera::Camera,
+    math::{rotate_around_pivot, rotate_vertex},
+    mesh::Mesh,
+    renderer::Renderer,
+    vertex::Vertex,
 };
 
 #[derive(Debug)]
@@ -70,8 +74,18 @@ impl ApplicationHandler for App {
 
         let mut meshes = vec![
             Mesh::cube(0.0, 5.0, 10.0, 1.0),
-            Mesh::sphere(0.0, -1.0, 10.0, 5.0, 12),
+            Mesh::sphere(0.0, -1.0, 0.0, 5.0, 12),
         ];
+
+        let mut orbiting_sphere = Mesh::sphere(10.0, 0.0, 2.0, 1.0, 8);
+        orbiting_sphere.rotate_around_pivot = true;
+        orbiting_sphere.pivot = Some(Vertex {
+            x: 0.0,
+            y: 0.0,
+            z: 0.0,
+        });
+        meshes.push(orbiting_sphere);
+
         self.meshes.append(&mut meshes);
     }
 
@@ -88,26 +102,26 @@ impl ApplicationHandler for App {
                 },
                 ..
             } => {
+                const ROT_SPEED: f32 = 0.02;
+
                 if state.is_pressed() {
                     match logical_key {
                         Key::Named(NamedKey::ArrowUp) => {
-                            println!("Up Arrow Pressed!")
+                            self.camera.rotation.0 += ROT_SPEED;
+                            self.camera.rotation.0 = self.camera.rotation.0.clamp(-1.5, 1.5)
                         }
                         Key::Named(NamedKey::ArrowDown) => {
-                            println!("Down Arrow Pressed!")
+                            self.camera.rotation.0 -= ROT_SPEED;
+                            self.camera.rotation.0 = self.camera.rotation.0.clamp(-1.5, 1.5)
                         }
-                        Key::Named(NamedKey::ArrowLeft) => {
-                            println!("Left Arrow Pressed!")
-                        }
-                        Key::Named(NamedKey::ArrowRight) => {
-                            println!("Right Arrow Pressed!")
-                        }
-                        Key::Character(ref c) if c == "w" => self.camera.position.y += 0.2,
-                        Key::Character(ref c) if c == "s" => self.camera.position.y -= 0.2,
+                        Key::Named(NamedKey::ArrowLeft) => self.camera.rotation.1 += ROT_SPEED,
+                        Key::Named(NamedKey::ArrowRight) => self.camera.rotation.1 -= ROT_SPEED,
+                        Key::Character(ref c) if c == "w" => self.camera.position.z += 0.2,
+                        Key::Character(ref c) if c == "s" => self.camera.position.z -= 0.2,
                         Key::Character(ref c) if c == "d" => self.camera.position.x += 0.2,
                         Key::Character(ref c) if c == "a" => self.camera.position.x -= 0.2,
-                        Key::Character(ref c) if c == "q" => self.camera.position.z += 0.2,
-                        Key::Character(ref c) if c == "e" => self.camera.position.z -= 0.2,
+                        Key::Character(ref c) if c == "q" => self.camera.position.y += 0.2,
+                        Key::Character(ref c) if c == "e" => self.camera.position.y -= 0.2,
                         _ => {}
                     }
                 }
@@ -115,19 +129,32 @@ impl ApplicationHandler for App {
             WindowEvent::RedrawRequested => {
                 self.renderer.clear(0, 0, 0, 255);
 
-                self.angles.0 += 0.01;
-                self.angles.1 += 0.015;
-                self.angles.2 += 0.012;
+                self.angles.1 += 0.012;
 
                 for mesh in &self.meshes {
-                    let rotated_vertices = rotate_vertices(&mesh.vertices, self.angles);
+                    let pivot = if mesh.rotate_around_pivot {
+                        Some(mesh.pivot.as_ref().unwrap())
+                    } else {
+                        None
+                    };
 
-                    let world_vertices: Vec<Vertex> = rotated_vertices
+                    let world_vertices: Vec<Vertex> = mesh
+                        .vertices
                         .iter()
-                        .map(|v| Vertex {
-                            x: v.x + mesh.centre.x,
-                            y: v.y + mesh.centre.y,
-                            z: v.z + mesh.centre.z,
+                        .map(|v| {
+                            let local_rotated = rotate_vertex(v, self.angles);
+
+                            let mut world = Vertex {
+                                x: local_rotated.x + mesh.centre.x,
+                                y: local_rotated.y + mesh.centre.y,
+                                z: local_rotated.z + mesh.centre.z,
+                            };
+
+                            if let Some(p) = pivot {
+                                world = rotate_around_pivot(&world, p, self.angles);
+                            }
+
+                            world
                         })
                         .collect();
 

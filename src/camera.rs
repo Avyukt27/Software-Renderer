@@ -28,38 +28,52 @@ impl Camera {
         }
     }
 
-    #[allow(dead_code)]
-    pub fn project_orthographic(&self, world: &Vertex) -> Vertex {
-        let x = world.x - self.position.x;
-        let y = world.y - self.position.y;
+    pub fn world_to_view(&self, world: &Vertex) -> Vertex {
+        let mut x = world.x - self.position.x;
+        let mut y = world.y - self.position.y;
+        let mut z = world.z - self.position.z;
 
-        Vertex {
-            x: x + self.screen_width as f64 / 2.0,
-            y: y + self.screen_height as f64 / 2.0,
-            z: world.z,
-        }
+        let pitch = self.rotation.0;
+        let yaw = self.rotation.1;
+
+        let cosy = yaw.cos() as f64;
+        let siny = yaw.sin() as f64;
+
+        let xz = cosy * x + siny * z;
+        let zz = -siny * x + cosy * z;
+
+        x = xz;
+        z = zz;
+
+        let cosp = pitch.cos() as f64;
+        let sinp = pitch.sin() as f64;
+
+        let yz = cosp * y - sinp * z;
+        let zz = sinp * y + cosp * z;
+
+        y = yz;
+        z = zz;
+
+        Vertex { x, y, z }
     }
 
-    #[allow(dead_code)]
     pub fn project_perspective(&self, world: &Vertex) -> Option<Vertex> {
-        let x = world.x - self.position.x;
-        let y = world.y - self.position.y;
-        let z = world.z - self.position.z;
+        let v = self.world_to_view(world);
 
-        if z <= self.near {
+        if v.z <= self.near || v.z >= self.far {
             return None;
         }
 
-        let fov_rad = self.fov.to_radians();
-        let scale = (self.screen_width as f64 / 2.0) / (fov_rad / 2.0).tan();
+        let aspect = self.screen_width as f64 / self.screen_height as f64;
+        let f = 1.0 / (self.fov.to_radians() * 0.5).tan();
 
-        let screen_x = (x * scale / z) + self.screen_width as f64 / 2.0;
-        let screen_y = (-y * scale / z) + self.screen_height as f64 / 2.0;
+        let x = (v.x * f / aspect) / v.z;
+        let y = (v.y * f) / v.z;
 
         Some(Vertex {
-            x: screen_x,
-            y: screen_y,
-            z,
+            x: x * self.screen_width as f64 * 0.5 + self.screen_width as f64 * 0.5,
+            y: -y * self.screen_height as f64 * 0.5 + self.screen_height as f64 * 0.5,
+            z: v.z,
         })
     }
 }
