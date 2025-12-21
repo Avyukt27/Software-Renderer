@@ -28,6 +28,7 @@ impl Camera {
         }
     }
 
+    #[allow(dead_code)]
     pub fn project_orthographic(&self, world: &Vertex) -> Vertex {
         let x = world.x - self.position.x;
         let y = world.y - self.position.y;
@@ -39,6 +40,7 @@ impl Camera {
         }
     }
 
+    #[allow(dead_code)]
     pub fn project_perspective(&self, world: &Vertex) -> Option<Vertex> {
         let x = world.x - self.position.x;
         let y = world.y - self.position.y;
