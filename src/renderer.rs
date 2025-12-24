@@ -1,3 +1,5 @@
+use std::f64::INFINITY;
+
 use crate::math::is_back_facing;
 use crate::primitives::{colour::Colour, vertex::Vertex};
 
@@ -6,6 +8,7 @@ pub struct Renderer {
     pub width: usize,
     pub height: usize,
     pub buffer: Vec<u8>,
+    pub depth: Vec<f64>,
 }
 
 impl Renderer {
@@ -14,6 +17,7 @@ impl Renderer {
             width,
             height,
             buffer: vec![0; width * height * 4],
+            depth: vec![INFINITY; width * height],
         }
     }
 
@@ -23,6 +27,10 @@ impl Renderer {
             px[1] = colour.green;
             px[2] = colour.blue;
             px[3] = colour.alpha;
+        }
+
+        for depth in self.depth.iter_mut() {
+            *depth = INFINITY;
         }
     }
 }
@@ -40,36 +48,26 @@ impl Renderer {
         self.buffer[idx + 3] = colour.alpha;
     }
 
-    pub fn put_circle(&mut self, centre_x: usize, centre_y: usize, radius: usize, colour: Colour) {
-        let radius_sq = (radius * radius) as isize;
+    pub fn put_pixel_depth(&mut self, x: usize, y: usize, z: f64, colour: Colour) {
+        if x >= self.width || y >= self.height {
+            return;
+        }
 
-        for dy in -(radius as isize)..=(radius as isize) {
-            for dx in -(radius as isize)..=(radius as isize) {
-                if dx * dx + dy * dy <= radius_sq {
-                    let x = centre_x as isize + dx;
-                    let y = centre_y as isize + dy;
+        let idx = y * self.width + x;
 
-                    if x >= 0 && y >= 0 && (x as usize) < self.width && (y as usize) < self.height {
-                        self.put_pixel(x as usize, y as usize, colour);
-                    }
-                }
-            }
+        if z < self.depth[idx] {
+            self.depth[idx] = z;
+
+            let base = idx * 4;
+            self.buffer[base] = colour.red;
+            self.buffer[base + 1] = colour.green;
+            self.buffer[base + 2] = colour.blue;
+            self.buffer[base + 3] = colour.alpha;
         }
     }
 }
 
 impl Renderer {
-    pub fn draw_vertex(&mut self, vertex: &Vertex) {
-        let x = vertex.x as isize;
-        let y = vertex.y as isize;
-
-        if x < 0 || y < 0 || x >= self.width as isize || y >= self.height as isize {
-            return;
-        }
-
-        self.put_circle(x as usize, y as usize, 1, Colour::new(255, 255, 255, 255));
-    }
-
     pub fn draw_edge(&mut self, vertex_1: &Vertex, vertex_2: &Vertex, colour: Colour) {
         let (mut x1, mut y1) = (vertex_1.x as isize, vertex_1.y as isize);
         let (x2, y2) = (vertex_2.x as isize, vertex_2.y as isize);
