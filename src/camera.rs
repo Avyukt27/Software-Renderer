@@ -1,4 +1,4 @@
-use crate::vertex::Vertex;
+use crate::primitives::vertex::Vertex;
 
 #[derive(Debug, Clone)]
 pub struct Camera {
