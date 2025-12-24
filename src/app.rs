@@ -116,12 +116,19 @@ impl ApplicationHandler for App {
                         }
                         Key::Named(NamedKey::ArrowLeft) => self.camera.rotation.1 += ROT_SPEED,
                         Key::Named(NamedKey::ArrowRight) => self.camera.rotation.1 -= ROT_SPEED,
+
                         Key::Character(ref c) if c == "w" => self.camera.position.z += 0.2,
                         Key::Character(ref c) if c == "s" => self.camera.position.z -= 0.2,
+
                         Key::Character(ref c) if c == "d" => self.camera.position.x += 0.2,
                         Key::Character(ref c) if c == "a" => self.camera.position.x -= 0.2,
+
                         Key::Character(ref c) if c == "q" => self.camera.position.y += 0.2,
                         Key::Character(ref c) if c == "e" => self.camera.position.y -= 0.2,
+
+                        Key::Character(ref c) if c == "x" => self.angles.0 += 0.2,
+                        Key::Character(ref c) if c == "c" => self.angles.1 += 0.2,
+                        Key::Character(ref c) if c == "z" => self.angles.2 += 0.2,
                         _ => {}
                     }
                 }
@@ -131,8 +138,6 @@ impl ApplicationHandler for App {
                 let bg_colour = Colour::new(0, 0, 0, 255);
 
                 self.renderer.clear(bg_colour);
-
-                self.angles.1 += 0.012;
 
                 for mesh in &self.meshes {
                     let pivot = if mesh.rotate_around_pivot {
