@@ -166,10 +166,12 @@ impl ApplicationHandler for App {
                         .map(|v| self.camera.project_perspective(v))
                         .collect();
 
-                    for &(i0, i1, i2) in &mesh.triangles {
-                        if let (Some(v0), Some(v1), Some(v2)) =
-                            (&view_vertices[i0], &view_vertices[i1], &view_vertices[i2])
-                        {
+                    for triangle in &mesh.triangles {
+                        if let (Some(v0), Some(v1), Some(v2)) = (
+                            &view_vertices[triangle.i0],
+                            &view_vertices[triangle.i1],
+                            &view_vertices[triangle.i2],
+                        ) {
                             self.renderer.fill_triangle(v0, v1, v2, mesh.colour);
                         }
                     }
