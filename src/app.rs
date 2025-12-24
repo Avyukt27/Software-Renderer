@@ -14,8 +14,8 @@ use crate::{
     camera::Camera,
     math::{rotate_around_pivot, rotate_vertex},
     mesh::Mesh,
+    primitives::{colour::Colour, vertex::Vertex},
     renderer::Renderer,
-    vertex::Vertex,
 };
 
 #[derive(Debug)]
@@ -123,8 +123,12 @@ impl ApplicationHandler for App {
                     }
                 }
             }
+
             WindowEvent::RedrawRequested => {
-                self.renderer.clear(0, 0, 0, 255);
+                let bg_colour = Colour::new(0, 0, 0, 255);
+                let fg_colour = Colour::new(255, 255, 255, 255);
+
+                self.renderer.clear(bg_colour);
 
                 self.angles.1 += 0.012;
 
@@ -164,13 +168,7 @@ impl ApplicationHandler for App {
                         if let (Some(v0), Some(v1), Some(v2)) =
                             (&view_vertices[i0], &view_vertices[i1], &view_vertices[i2])
                         {
-                            self.renderer.draw_triangles(v0, v1, v2);
-                        }
-                    }
-
-                    for &(from, to) in &mesh.edges {
-                        if let (Some(v1), Some(v2)) = (&view_vertices[from], &view_vertices[to]) {
-                            self.renderer.draw_edge(v1, v2, 255, 255, 255, 255);
+                            self.renderer.draw_triangles(v0, v1, v2, fg_colour);
                         }
                     }
                 }
@@ -185,6 +183,7 @@ impl ApplicationHandler for App {
                     window.request_redraw();
                 }
             }
+
             WindowEvent::Resized(size) => {
                 self.renderer = Renderer::new(size.width as usize, size.height as usize);
                 if let Some(pixels) = &mut self.pixels {
@@ -192,6 +191,7 @@ impl ApplicationHandler for App {
                     pixels.resize_buffer(size.width, size.height).unwrap();
                 }
             }
+
             WindowEvent::CloseRequested => {
                 event_loop.exit();
             }

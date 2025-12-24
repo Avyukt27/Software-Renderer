@@ -1,36 +1,36 @@
-use crate::vertex::Vertex;
+use crate::primitives::vertex::Vertex;
 
 pub fn rotate_x(vertex: &Vertex, angle: f32) -> Vertex {
     let sin = angle.sin() as f64;
     let cos = angle.cos() as f64;
 
-    Vertex {
-        x: vertex.x,
-        y: vertex.y * cos - vertex.z * sin,
-        z: vertex.y * sin + vertex.z * cos,
-    }
+    Vertex::new(
+        vertex.x,
+        vertex.y * cos - vertex.z * sin,
+        vertex.y * sin + vertex.z * cos,
+    )
 }
 
 pub fn rotate_y(vertex: &Vertex, angle: f32) -> Vertex {
     let sin = angle.sin() as f64;
     let cos = angle.cos() as f64;
 
-    Vertex {
-        x: vertex.x * cos + vertex.z * sin,
-        y: vertex.y,
-        z: -vertex.x * sin + vertex.z * cos,
-    }
+    Vertex::new(
+        vertex.x * cos + vertex.z * sin,
+        vertex.y,
+        -vertex.x * sin + vertex.z * cos,
+    )
 }
 
 pub fn rotate_z(vertex: &Vertex, angle: f32) -> Vertex {
     let sin = angle.sin() as f64;
     let cos = angle.cos() as f64;
 
-    Vertex {
-        x: vertex.x * cos - vertex.y * sin,
-        y: vertex.x * sin + vertex.y * cos,
-        z: vertex.z,
-    }
+    Vertex::new(
+        vertex.x * cos - vertex.y * sin,
+        vertex.x * sin + vertex.y * cos,
+        vertex.z,
+    )
 }
 
 pub fn rotate_vertex(vertex: &Vertex, rotation: (f32, f32, f32)) -> Vertex {
@@ -44,19 +44,11 @@ pub fn rotate_vertex(vertex: &Vertex, rotation: (f32, f32, f32)) -> Vertex {
 }
 
 pub fn rotate_around_pivot(vertex: &Vertex, pivot: &Vertex, rotation: (f32, f32, f32)) -> Vertex {
-    let mut v = Vertex {
-        x: vertex.x - pivot.x,
-        y: vertex.y - pivot.y,
-        z: vertex.z - pivot.z,
-    };
+    let mut v = Vertex::new(vertex.x - pivot.x, vertex.y - pivot.y, vertex.z - pivot.z);
 
     v = rotate_vertex(&v, rotation);
 
-    Vertex {
-        x: v.x + pivot.x,
-        y: v.y + pivot.y,
-        z: v.z + pivot.z,
-    }
+    Vertex::new(v.x + pivot.x, v.y + pivot.y, v.z + pivot.z)
 }
 
 pub fn is_back_facing(v0: &Vertex, v1: &Vertex, v2: &Vertex) -> bool {

@@ -1,5 +1,5 @@
 use crate::math::is_back_facing;
-use crate::vertex::Vertex;
+use crate::primitives::{colour::Colour, vertex::Vertex};
 
 #[derive(Debug)]
 pub struct Renderer {
@@ -17,39 +17,30 @@ impl Renderer {
         }
     }
 
-    pub fn clear(&mut self, red: u8, green: u8, blue: u8, alpha: u8) {
+    pub fn clear(&mut self, colour: Colour) {
         for px in self.buffer.chunks_exact_mut(4) {
-            px[0] = red;
-            px[1] = green;
-            px[2] = blue;
-            px[3] = alpha;
+            px[0] = colour.red;
+            px[1] = colour.green;
+            px[2] = colour.blue;
+            px[3] = colour.alpha;
         }
     }
 }
 
 impl Renderer {
-    pub fn put_pixel(&mut self, x: usize, y: usize, red: u8, green: u8, blue: u8, alpha: u8) {
+    pub fn put_pixel(&mut self, x: usize, y: usize, colour: Colour) {
         if x >= self.width || y >= self.height {
             return;
         }
 
         let idx = (y * self.width + x) * 4;
-        self.buffer[idx] = red;
-        self.buffer[idx + 1] = green;
-        self.buffer[idx + 2] = blue;
-        self.buffer[idx + 3] = alpha;
+        self.buffer[idx] = colour.red;
+        self.buffer[idx + 1] = colour.green;
+        self.buffer[idx + 2] = colour.blue;
+        self.buffer[idx + 3] = colour.alpha;
     }
 
-    pub fn put_circle(
-        &mut self,
-        centre_x: usize,
-        centre_y: usize,
-        radius: usize,
-        red: u8,
-        green: u8,
-        blue: u8,
-        alpha: u8,
-    ) {
+    pub fn put_circle(&mut self, centre_x: usize, centre_y: usize, radius: usize, colour: Colour) {
         let radius_sq = (radius * radius) as isize;
 
         for dy in -(radius as isize)..=(radius as isize) {
@@ -59,13 +50,14 @@ impl Renderer {
                     let y = centre_y as isize + dy;
 
                     if x >= 0 && y >= 0 && (x as usize) < self.width && (y as usize) < self.height {
-                        self.put_pixel(x as usize, y as usize, red, green, blue, alpha);
+                        self.put_pixel(x as usize, y as usize, colour);
                     }
                 }
             }
         }
     }
 }
+
 impl Renderer {
     pub fn draw_vertex(&mut self, vertex: &Vertex) {
         let x = vertex.x as isize;
@@ -75,18 +67,10 @@ impl Renderer {
             return;
         }
 
-        self.put_circle(x as usize, y as usize, 1, 255, 255, 255, 255);
+        self.put_circle(x as usize, y as usize, 1, Colour::new(255, 255, 255, 255));
     }
 
-    pub fn draw_edge(
-        &mut self,
-        vertex_1: &Vertex,
-        vertex_2: &Vertex,
-        red: u8,
-        green: u8,
-        blue: u8,
-        alpha: u8,
-    ) {
+    pub fn draw_edge(&mut self, vertex_1: &Vertex, vertex_2: &Vertex, colour: Colour) {
         let (mut x1, mut y1) = (vertex_1.x as isize, vertex_1.y as isize);
         let (x2, y2) = (vertex_2.x as isize, vertex_2.y as isize);
 
@@ -98,7 +82,7 @@ impl Renderer {
 
         loop {
             if x1 >= 0 && y1 >= 0 && x1 < self.width as isize && y1 < self.height as isize {
-                self.put_pixel(x1 as usize, y1 as usize, red, green, blue, alpha);
+                self.put_pixel(x1 as usize, y1 as usize, colour);
             }
 
             if x1 == x2 && y1 == y2 {
@@ -117,13 +101,13 @@ impl Renderer {
         }
     }
 
-    pub fn draw_triangles(&mut self, a: &Vertex, b: &Vertex, c: &Vertex) {
+    pub fn draw_triangles(&mut self, a: &Vertex, b: &Vertex, c: &Vertex, colour: Colour) {
         if is_back_facing(a, b, c) {
             return;
         }
 
-        self.draw_edge(a, b, 255, 255, 255, 255);
-        self.draw_edge(b, c, 255, 255, 255, 255);
-        self.draw_edge(c, a, 255, 255, 255, 255);
+        self.draw_edge(a, b, colour);
+        self.draw_edge(b, c, colour);
+        self.draw_edge(c, a, colour);
     }
 }
