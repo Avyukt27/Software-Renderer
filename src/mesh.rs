@@ -1,4 +1,4 @@
-use crate::vertex::Vertex;
+use crate::primitives::vertex::Vertex;
 use std::f64::consts::PI;
 
 #[derive(Debug)]
@@ -17,7 +17,7 @@ impl Mesh {
             vertices: Vec::new(),
             edges: Vec::new(),
             triangles: Vec::new(),
-            centre: Vertex::default(),
+            centre: Vertex::new(0.0, 0.0, 0.0),
             rotate_around_pivot: false,
             pivot: None,
         }
@@ -55,46 +55,14 @@ impl Mesh {
 impl Mesh {
     fn create_cube(&mut self, size: f64) {
         let mut vertices = vec![
-            Vertex {
-                x: -size / 2.0,
-                y: -size / 2.0,
-                z: size / 2.0,
-            },
-            Vertex {
-                x: size / 2.0,
-                y: -size / 2.0,
-                z: size / 2.0,
-            },
-            Vertex {
-                x: size / 2.0,
-                y: size / 2.0,
-                z: size / 2.0,
-            },
-            Vertex {
-                x: -size / 2.0,
-                y: size / 2.0,
-                z: size / 2.0,
-            },
-            Vertex {
-                x: -size / 2.0,
-                y: -size / 2.0,
-                z: -size / 2.0,
-            },
-            Vertex {
-                x: size / 2.0,
-                y: -size / 2.0,
-                z: -size / 2.0,
-            },
-            Vertex {
-                x: size / 2.0,
-                y: size / 2.0,
-                z: -size / 2.0,
-            },
-            Vertex {
-                x: -size / 2.0,
-                y: size / 2.0,
-                z: -size / 2.0,
-            },
+            Vertex::new(-size / 2.0, -size / 2.0, size / 2.0),
+            Vertex::new(size / 2.0, -size / 2.0, size / 2.0),
+            Vertex::new(size / 2.0, size / 2.0, size / 2.0),
+            Vertex::new(-size / 2.0, size / 2.0, size / 2.0),
+            Vertex::new(-size / 2.0, -size / 2.0, -size / 2.0),
+            Vertex::new(size / 2.0, -size / 2.0, -size / 2.0),
+            Vertex::new(size / 2.0, size / 2.0, -size / 2.0),
+            Vertex::new(-size / 2.0, size / 2.0, -size / 2.0),
         ];
         self.vertices.append(&mut vertices);
 

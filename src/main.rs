@@ -4,8 +4,8 @@ mod app;
 mod camera;
 mod math;
 mod mesh;
+mod primitives;
 mod renderer;
-mod vertex;
 
 use app::App;
 
