@@ -1,11 +1,11 @@
-use crate::primitives::{colour::Colour, vertex::Vertex};
+use crate::primitives::{colour::Colour, triangle::Triangle, vertex::Vertex};
 use std::f64::consts::PI;
 
 #[derive(Debug)]
 pub struct Mesh {
     pub vertices: Vec<Vertex>,
     pub edges: Vec<(usize, usize)>,
-    pub triangles: Vec<(usize, usize, usize)>,
+    pub triangles: Vec<Triangle>,
     pub centre: Vertex,
     pub rotate_around_pivot: bool,
     pub pivot: Option<Vertex>,
@@ -72,18 +72,18 @@ impl Mesh {
         self.vertices.append(&mut vertices);
 
         self.triangles.extend([
-            (0, 1, 2),
-            (0, 2, 3),
-            (5, 4, 7),
-            (5, 7, 6),
-            (4, 0, 3),
-            (4, 3, 7),
-            (1, 5, 6),
-            (1, 6, 2),
-            (3, 2, 6),
-            (3, 6, 7),
-            (4, 5, 1),
-            (4, 1, 0),
+            Triangle::new(0, 1, 2),
+            Triangle::new(0, 2, 3),
+            Triangle::new(5, 4, 7),
+            Triangle::new(5, 7, 6),
+            Triangle::new(4, 0, 3),
+            Triangle::new(4, 3, 7),
+            Triangle::new(1, 5, 6),
+            Triangle::new(1, 6, 2),
+            Triangle::new(3, 2, 6),
+            Triangle::new(3, 6, 7),
+            Triangle::new(4, 5, 1),
+            Triangle::new(4, 1, 0),
         ]);
     }
 
