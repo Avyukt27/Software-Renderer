@@ -1,4 +1,4 @@
-use crate::primitives::vertex::Vertex;
+use crate::primitives::{colour::Colour, vertex::Vertex};
 use std::f64::consts::PI;
 
 #[derive(Debug)]
@@ -9,6 +9,7 @@ pub struct Mesh {
     pub centre: Vertex,
     pub rotate_around_pivot: bool,
     pub pivot: Option<Vertex>,
+    pub colour: Colour,
 }
 
 impl Mesh {
@@ -20,10 +21,11 @@ impl Mesh {
             centre: Vertex::new(0.0, 0.0, 0.0),
             rotate_around_pivot: false,
             pivot: None,
+            colour: Colour::new(255, 255, 255, 255),
         }
     }
 
-    pub fn cube(centre_x: f64, centre_y: f64, centre_z: f64, size: f64) -> Self {
+    pub fn cube(centre_x: f64, centre_y: f64, centre_z: f64, size: f64, colour: Colour) -> Self {
         let mut mesh = Self::new();
         mesh.create_cube(size);
         mesh.centre = Vertex {
@@ -31,6 +33,7 @@ impl Mesh {
             y: centre_y,
             z: centre_z,
         };
+        mesh.colour = colour;
         mesh
     }
 
@@ -40,6 +43,7 @@ impl Mesh {
         centre_z: f64,
         radius: f64,
         segments: usize,
+        colour: Colour,
     ) -> Self {
         let mut mesh = Self::new();
         mesh.create_sphere(radius, segments);
@@ -48,6 +52,7 @@ impl Mesh {
             y: centre_y,
             z: centre_z,
         };
+        mesh.colour = colour;
         mesh
     }
 }
