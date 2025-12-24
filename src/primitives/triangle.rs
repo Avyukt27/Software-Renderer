@@ -1,14 +1,12 @@
-use crate::primitives::vertex::Vertex;
-
 #[derive(Debug, Clone, Copy)]
 pub struct Triangle {
-    v0: Vertex,
-    v1: Vertex,
-    v2: Vertex,
+    pub i0: usize,
+    pub i1: usize,
+    pub i2: usize,
 }
 
 impl Triangle {
-    pub fn new(v0: Vertex, v1: Vertex, v2: Vertex) -> Self {
-        Self { v0, v1, v2 }
+    pub fn new(i0: usize, i1: usize, v2: usize) -> Self {
+        Self { i0, i1, i2: v2 }
     }
 }

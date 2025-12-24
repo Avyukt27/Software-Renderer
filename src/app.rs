@@ -72,9 +72,12 @@ impl ApplicationHandler for App {
         self.window = Some(window);
         self.pixels = Some(pixels);
 
-        let mut meshes = vec![Mesh::cube(0.0, 5.0, 10.0, 10.0)];
+        let mut meshes = vec![
+            Mesh::cube(0.0, 5.0, 20.0, 5.0, Colour::new(255, 0, 0, 255)),
+            Mesh::sphere(0.0, 0.0, 10.0, 5.0, 20, Colour::new(0, 255, 0, 255)),
+        ];
 
-        let mut orbiting_sphere = Mesh::sphere(10.0, 0.0, 2.0, 1.0, 8);
+        let mut orbiting_sphere = Mesh::sphere(10.0, 0.0, 2.0, 1.0, 8, Colour::new(0, 255, 0, 255));
         orbiting_sphere.rotate_around_pivot = true;
         orbiting_sphere.pivot = Some(Vertex {
             x: 0.0,
@@ -126,7 +129,6 @@ impl ApplicationHandler for App {
 
             WindowEvent::RedrawRequested => {
                 let bg_colour = Colour::new(0, 0, 0, 255);
-                let fg_colour = Colour::new(255, 255, 255, 255);
 
                 self.renderer.clear(bg_colour);
 
@@ -164,30 +166,17 @@ impl ApplicationHandler for App {
                         .map(|v| self.camera.project_perspective(v))
                         .collect();
 
-                    for v in view_vertices.iter().flatten() {
-                        let x = v.x as isize;
-                        let y = v.y as isize;
-
-                        if x < 0 || y < 0 {
-                            continue;
+                    for triangle in &mesh.triangles {
+                        if let (Some(v0), Some(v1), Some(v2)) = (
+                            &view_vertices[triangle.i0],
+                            &view_vertices[triangle.i1],
+                            &view_vertices[triangle.i2],
+                        ) {
+                            self.renderer.fill_triangle(v0, v1, v2, mesh.colour);
                         }
-
-                        self.renderer.put_pixel_depth(
-                            x as usize,
-                            y as usize,
-                            v.z + 5.0,
-                            Colour::new(255, 0, 0, 255),
-                        );
-
-                        self.renderer.put_pixel_depth(
-                            x as usize,
-                            y as usize,
-                            v.z,
-                            Colour::new(255, 0, 255, 255),
-                        );
                     }
                 }
-                // Hello?
+
                 if let Some(pixels) = &mut self.pixels {
                     let frame = pixels.frame_mut();
                     frame.copy_from_slice(&self.renderer.buffer);
