@@ -164,12 +164,27 @@ impl ApplicationHandler for App {
                         .map(|v| self.camera.project_perspective(v))
                         .collect();
 
-                    for &(i0, i1, i2) in &mesh.triangles {
-                        if let (Some(v0), Some(v1), Some(v2)) =
-                            (&view_vertices[i0], &view_vertices[i1], &view_vertices[i2])
-                        {
-                            self.renderer.draw_triangles(v0, v1, v2, fg_colour);
+                    for v in view_vertices.iter().flatten() {
+                        let x = v.x as isize;
+                        let y = v.y as isize;
+
+                        if x < 0 || y < 0 {
+                            continue;
                         }
+
+                        self.renderer.put_pixel_depth(
+                            x as usize,
+                            y as usize,
+                            v.z + 5.0,
+                            Colour::new(255, 0, 0, 255),
+                        );
+
+                        self.renderer.put_pixel_depth(
+                            x as usize,
+                            y as usize,
+                            v.z,
+                            Colour::new(255, 0, 255, 255),
+                        );
                     }
                 }
 
