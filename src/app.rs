@@ -72,9 +72,12 @@ impl ApplicationHandler for App {
         self.window = Some(window);
         self.pixels = Some(pixels);
 
-        let mut meshes = vec![Mesh::cube(0.0, 5.0, 10.0, 10.0)];
+        let mut meshes = vec![
+            Mesh::cube(0.0, 5.0, 10.0, 10.0, Colour::new(255, 255, 255, 255)),
+            Mesh::cube(0.0, 5.0, 20.0, 5.0, Colour::new(255, 0, 0, 255)),
+        ];
 
-        let mut orbiting_sphere = Mesh::sphere(10.0, 0.0, 2.0, 1.0, 8);
+        let mut orbiting_sphere = Mesh::sphere(10.0, 0.0, 2.0, 1.0, 8, Colour::new(0, 255, 0, 255));
         orbiting_sphere.rotate_around_pivot = true;
         orbiting_sphere.pivot = Some(Vertex {
             x: 0.0,
@@ -126,7 +129,6 @@ impl ApplicationHandler for App {
 
             WindowEvent::RedrawRequested => {
                 let bg_colour = Colour::new(0, 0, 0, 255);
-                let fg_colour = Colour::new(255, 255, 255, 255);
 
                 self.renderer.clear(bg_colour);
 
@@ -168,7 +170,7 @@ impl ApplicationHandler for App {
                         if let (Some(v0), Some(v1), Some(v2)) =
                             (&view_vertices[i0], &view_vertices[i1], &view_vertices[i2])
                         {
-                            self.renderer.fill_triangle(v0, v1, v2, fg_colour);
+                            self.renderer.fill_triangle(v0, v1, v2, mesh.colour);
                         }
                     }
                 }
