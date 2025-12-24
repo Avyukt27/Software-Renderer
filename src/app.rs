@@ -73,8 +73,8 @@ impl ApplicationHandler for App {
         self.pixels = Some(pixels);
 
         let mut meshes = vec![
-            Mesh::cube(0.0, 5.0, 10.0, 10.0, Colour::new(255, 255, 255, 255)),
             Mesh::cube(0.0, 5.0, 20.0, 5.0, Colour::new(255, 0, 0, 255)),
+            Mesh::sphere(0.0, 0.0, 10.0, 5.0, 15, Colour::new(0, 255, 0, 255)),
         ];
 
         let mut orbiting_sphere = Mesh::sphere(10.0, 0.0, 2.0, 1.0, 8, Colour::new(0, 255, 0, 255));
