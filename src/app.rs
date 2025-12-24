@@ -187,7 +187,7 @@ impl ApplicationHandler for App {
                         );
                     }
                 }
-
+                // Hello?
                 if let Some(pixels) = &mut self.pixels {
                     let frame = pixels.frame_mut();
                     frame.copy_from_slice(&self.renderer.buffer);
