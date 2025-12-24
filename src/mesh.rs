@@ -4,7 +4,6 @@ use std::f64::consts::PI;
 #[derive(Debug)]
 pub struct Mesh {
     pub vertices: Vec<Vertex>,
-    pub edges: Vec<(usize, usize)>,
     pub triangles: Vec<Triangle>,
     pub centre: Vertex,
     pub rotate_around_pivot: bool,
@@ -16,7 +15,6 @@ impl Mesh {
     pub fn new() -> Self {
         Self {
             vertices: Vec::new(),
-            edges: Vec::new(),
             triangles: Vec::new(),
             centre: Vertex::new(0.0, 0.0, 0.0),
             rotate_around_pivot: false,
@@ -89,7 +87,7 @@ impl Mesh {
 
     fn create_sphere(&mut self, radius: f64, segments: usize) {
         self.vertices.clear();
-        self.edges.clear();
+        self.triangles.clear();
 
         for i in 0..=segments {
             let theta = i as f64 * PI / segments as f64;
@@ -107,18 +105,20 @@ impl Mesh {
 
         let ring_size = segments;
 
-        for i in 0..=segments {
-            for j in 0..segments {
-                let current = i * ring_size + j;
+        for i in 0..segments {
+            let current_ring = i * ring_size;
+            let next_ring = (i + 1) * ring_size;
 
+            for j in 0..ring_size {
                 let next_j = (j + 1) % ring_size;
-                let horizontal = i * ring_size + next_j;
-                self.edges.push((current, horizontal));
 
-                if i < segments {
-                    let vertical = (i + 1) * ring_size + j;
-                    self.edges.push((current, vertical));
-                }
+                let a = current_ring + j;
+                let b = current_ring + next_j;
+                let c = next_ring + j;
+                let d = next_ring + next_j;
+
+                self.triangles.push(Triangle::new(a, c, b));
+                self.triangles.push(Triangle::new(b, c, d));
             }
         }
     }
