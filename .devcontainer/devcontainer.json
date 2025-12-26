@@ -1,0 +1,29 @@
+{
+	"name": "Software Renderer",
+	"build": {
+		"dockerfile": "Dockerfile"
+	},
+	"customizations": {
+		"vscode": {
+			"extensions": [
+				"matklad.rust-analyzer",
+				"serayuzgur.crates",
+				"vadimcn.vscode-lldb",
+				"cschleiden.vscode-github-actions"
+			],
+			"settings": {
+				"editor.formatOnSave": true,
+				"rust-analyzer.check.command": "clippy",
+				"rust-analyzer.cargo.allFeatures": true
+			}
+		}
+	},
+
+	"features": {
+		"ghcr.io/devcontainers/features/github-cli:1": {}
+	},
+
+	"postCreateCommand": "cargo fetch",
+
+	"remoteUser": "root"
+}
