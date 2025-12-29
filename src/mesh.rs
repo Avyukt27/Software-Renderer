@@ -5,7 +5,6 @@ use std::f64::consts::PI;
 pub struct Mesh {
     pub vertices: Vec<Vertex>,
     pub triangles: Vec<Triangle>,
-    pub normals: Vec<Vertex>,
     pub centre: Vertex,
     pub rotate_around_pivot: bool,
     pub pivot: Option<Vertex>,
@@ -17,7 +16,6 @@ impl Mesh {
         Self {
             vertices: Vec::new(),
             triangles: Vec::new(),
-            normals: Vec::new(),
             centre: Vertex::new(0.0, 0.0, 0.0),
             rotate_around_pivot: false,
             pivot: None,
