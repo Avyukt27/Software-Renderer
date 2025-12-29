@@ -5,6 +5,7 @@ use std::f64::consts::PI;
 pub struct Mesh {
     pub vertices: Vec<Vertex>,
     pub triangles: Vec<Triangle>,
+    pub normals: Vec<Vertex>,
     pub centre: Vertex,
     pub rotate_around_pivot: bool,
     pub pivot: Option<Vertex>,
@@ -16,6 +17,7 @@ impl Mesh {
         Self {
             vertices: Vec::new(),
             triangles: Vec::new(),
+            normals: Vec::new(),
             centre: Vertex::new(0.0, 0.0, 0.0),
             rotate_around_pivot: false,
             pivot: None,
@@ -23,7 +25,7 @@ impl Mesh {
         }
     }
 
-    pub fn cube(centre_x: f64, centre_y: f64, centre_z: f64, size: f64, colour: Colour) -> Self {
+    pub fn cube(centre_x: f64, centre_y: f64, centre_z: f64, size: f64, colour: &Colour) -> Self {
         let mut mesh = Self::new();
         mesh.create_cube(size);
         mesh.centre = Vertex {
@@ -31,7 +33,7 @@ impl Mesh {
             y: centre_y,
             z: centre_z,
         };
-        mesh.colour = colour;
+        mesh.colour = *colour;
         mesh
     }
 
@@ -41,7 +43,7 @@ impl Mesh {
         centre_z: f64,
         radius: f64,
         segments: usize,
-        colour: Colour,
+        colour: &Colour,
     ) -> Self {
         let mut mesh = Self::new();
         mesh.create_sphere(radius, segments);
@@ -50,7 +52,7 @@ impl Mesh {
             y: centre_y,
             z: centre_z,
         };
-        mesh.colour = colour;
+        mesh.colour = *colour;
         mesh
     }
 }

@@ -14,7 +14,7 @@ use crate::{
     camera::Camera,
     math::{rotate_around_pivot, rotate_vertex},
     mesh::Mesh,
-    primitives::{colour::Colour, vertex::Vertex},
+    primitives::{colour::Colour, light::Light, vertex::Vertex},
     renderer::Renderer,
 };
 
@@ -26,6 +26,7 @@ pub struct App {
     camera: Camera,
     meshes: Vec<Mesh>,
     angles: (f32, f32, f32),
+    light: Light,
 }
 
 impl App {
@@ -37,6 +38,7 @@ impl App {
             camera: Camera::new(width, height),
             meshes: Vec::new(),
             angles: (0.0, 0.0, 0.0),
+            light: Light::new(),
         }
     }
 }
@@ -73,11 +75,11 @@ impl ApplicationHandler for App {
         self.pixels = Some(pixels);
 
         let mut meshes = vec![
-            Mesh::cube(0.0, 5.0, 20.0, 5.0, Colour::new(255, 0, 0, 255)),
-            Mesh::sphere(0.0, 0.0, 10.0, 5.0, 20, Colour::new(0, 255, 0, 255)),
+            Mesh::cube(0.0, 5.0, 20.0, 5.0, &Colour::new(255, 0, 0, 255)),
+            Mesh::sphere(0.0, 0.0, 10.0, 5.0, 20, &Colour::new(0, 255, 0, 255)),
         ];
 
-        let mut orbiting_sphere = Mesh::sphere(10.0, 0.0, 2.0, 1.0, 8, Colour::new(0, 0, 255, 255));
+        let mut orbiting_sphere = Mesh::sphere(10.0, 0.0, 2.0, 1.0, 8, &Colour::new(0, 0, 255, 255));
         orbiting_sphere.rotate_around_pivot = true;
         orbiting_sphere.pivot = Some(Vertex {
             x: 0.0,
