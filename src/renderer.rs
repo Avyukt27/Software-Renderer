@@ -1,4 +1,5 @@
 use crate::math::is_back_facing;
+use crate::primitives::texture::Texture;
 use crate::primitives::{colour::Colour, vertex::Vertex};
 
 #[derive(Debug)]
@@ -52,7 +53,13 @@ impl Renderer {
         }
     }
 
-    pub fn fill_triangle(&mut self, v0: &Vertex, v1: &Vertex, v2: &Vertex, colour: Option<Colour>) {
+    pub fn fill_triangle(
+        &mut self,
+        v0: &Vertex,
+        v1: &Vertex,
+        v2: &Vertex,
+        texture: &Option<Texture>,
+    ) {
         if is_back_facing(v0, v1, v2) {
             return;
         }
@@ -92,8 +99,35 @@ impl Renderer {
 
                     let depth = alpha * v0.z + beta * v1.z + gamma * v2.z;
 
-                    if let Some(c) = colour {
+                    let u_over_z0 = v0.u / v0.z;
+                    let v_over_z0 = v0.v / v0.z;
+                    let one_over_z0 = 1.0 / v0.z;
+
+                    let u_over_z1 = v1.u / v1.z;
+                    let v_over_z1 = v1.v / v1.z;
+                    let one_over_z1 = 1.0 / v1.z;
+
+                    let u_over_z2 = v2.u / v2.z;
+                    let v_over_z2 = v2.v / v2.z;
+                    let one_over_z2 = 1.0 / v2.z;
+
+                    let u_over_z = alpha * u_over_z0 + beta * u_over_z1 + gamma * u_over_z2;
+                    let v_over_z = alpha * v_over_z0 + beta * v_over_z1 + gamma * v_over_z2;
+                    let one_over_z = alpha * one_over_z0 + beta * one_over_z1 + gamma * one_over_z2;
+
+                    let u = u_over_z / one_over_z;
+                    let v = v_over_z / one_over_z;
+
+                    if let Some(t) = texture {
+                        let c = t.sample(u, v);
                         self.put_pixel_depth(x as usize, y as usize, depth, c);
+                    } else {
+                        self.put_pixel_depth(
+                            x as usize,
+                            y as usize,
+                            depth,
+                            Colour::new(255, 19, 240, 255),
+                        );
                     }
                 }
             }
