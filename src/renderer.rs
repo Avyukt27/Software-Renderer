@@ -98,8 +98,25 @@ impl Renderer {
                     let gamma = w2 as f64 / area as f64;
 
                     let depth = alpha * v0.z + beta * v1.z + gamma * v2.z;
-                    let u = alpha * v0.u + beta * v1.u + gamma * v2.u;
-                    let v = alpha * v0.v + beta * v1.v + gamma * v2.v;
+
+                    let u_over_z0 = v0.u / v0.z;
+                    let v_over_z0 = v0.v / v0.z;
+                    let one_over_z0 = 1.0 / v0.z;
+
+                    let u_over_z1 = v1.u / v1.z;
+                    let v_over_z1 = v1.v / v1.z;
+                    let one_over_z1 = 1.0 / v1.z;
+
+                    let u_over_z2 = v2.u / v2.z;
+                    let v_over_z2 = v2.v / v2.z;
+                    let one_over_z2 = 1.0 / v2.z;
+
+                    let u_over_z = alpha * u_over_z0 + beta * u_over_z1 + gamma * u_over_z2;
+                    let v_over_z = alpha * v_over_z0 + beta * v_over_z1 + gamma * v_over_z2;
+                    let one_over_z = alpha * one_over_z0 + beta * one_over_z1 + gamma * one_over_z2;
+
+                    let u = u_over_z / one_over_z;
+                    let v = v_over_z / one_over_z;
 
                     if let Some(t) = texture {
                         let c = t.sample(u, v);
