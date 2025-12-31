@@ -73,12 +73,14 @@ impl ApplicationHandler for App {
         self.pixels = Some(pixels);
 
         let mut cube = Mesh::cube(0.0, 0.0, 10.0, 5.0);
-        cube.texture = Some(match Texture::from_file("assets/interior_tiles.jpg") {
-            Ok(t) => t,
-            Err(e) => panic!("Problem loading texture: {e:?}"),
-        });
+        cube.texture = Some(
+            match Texture::from_file("assets/textures/interior_tiles.jpg") {
+                Ok(t) => t,
+                Err(e) => panic!("Problem loading texture: {e:?}"),
+            },
+        );
 
-        self.meshes.extend([cube]);
+        self.meshes.push(cube);
     }
 
     fn window_event(
