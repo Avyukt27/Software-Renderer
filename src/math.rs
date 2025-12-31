@@ -1,4 +1,4 @@
-use crate::primitives::vertex::Vertex;
+use crate::primitives::{vector::Vec3, vertex::Vertex};
 
 pub fn rotate_x(vertex: &Vertex, angle: f32) -> Vertex {
     let sin = angle.sin() as f64;
@@ -49,7 +49,7 @@ pub fn rotate_vertex(vertex: &Vertex, rotation: (f32, f32, f32)) -> Vertex {
     rotated
 }
 
-pub fn rotate_around_pivot(vertex: &Vertex, pivot: &Vertex, rotation: (f32, f32, f32)) -> Vertex {
+pub fn rotate_around_pivot(vertex: &Vertex, pivot: &Vec3, rotation: (f32, f32, f32)) -> Vertex {
     let mut v = Vertex::new(
         vertex.x - pivot.x,
         vertex.y - pivot.y,
