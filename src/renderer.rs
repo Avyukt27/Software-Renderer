@@ -64,13 +64,12 @@ impl Renderer {
             return;
         }
 
-        // Flip Y to match screen-space (Y down)
         let x0 = v0.x as i32;
-        let y0 = (self.height as i32 - 1) - v0.y as i32;
+        let y0 = v0.y as i32;
         let x1 = v1.x as i32;
-        let y1 = (self.height as i32 - 1) - v1.y as i32;
+        let y1 = v1.y as i32;
         let x2 = v2.x as i32;
-        let y2 = (self.height as i32 - 1) - v2.y as i32;
+        let y2 = v2.y as i32;
 
         let min_x = x0.min(x1).min(x2).clamp(0, self.width as i32 - 1);
         let max_x = x0.max(x1).max(x2).clamp(0, self.width as i32 - 1);
@@ -125,12 +124,7 @@ impl Renderer {
                         Colour::new(255, 0, 255, 255)
                     };
 
-                    self.put_pixel_depth(
-                        x as usize,
-                        (self.height as i32 - 1 - y) as usize,
-                        depth,
-                        colour,
-                    );
+                    self.put_pixel_depth(x as usize, y as usize, depth, colour);
                 }
             }
         }

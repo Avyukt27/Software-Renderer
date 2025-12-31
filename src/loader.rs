@@ -17,6 +17,7 @@ pub fn load_wavefront(path: &str) -> Result<Mesh, &str> {
     let mut vertices: Vec<Vertex> = Vec::new();
     let mut triangles: Vec<Triangle> = Vec::new();
 
+    // Each triple of (position_index, uv_index, normal_index) maps to a unique vertex
     let mut vertex_map: HashMap<(usize, usize, usize), usize> = HashMap::new();
 
     for line in read_to_string(path)
@@ -30,43 +31,31 @@ pub fn load_wavefront(path: &str) -> Result<Mesh, &str> {
 
         match words[0] {
             "v" => {
-                if words.len() != 4 {
-                    return Err("Invalid vertex");
-                }
                 positions.push(Vec3 {
-                    x: words[1].parse().map_err(|_| "Invalid v")?,
-                    y: words[2].parse().map_err(|_| "Invalid v")?,
-                    z: words[3].parse().map_err(|_| "Invalid v")?,
+                    x: words[1].parse().map_err(|_| "Invalid vertex")?,
+                    y: words[2].parse().map_err(|_| "Invalid vertex")?,
+                    z: words[3].parse().map_err(|_| "Invalid vertex")?,
                 });
             }
-
             "vt" => {
-                if words.len() < 3 {
-                    return Err("Invalid vt");
-                }
                 let u: f64 = words[1].parse().map_err(|_| "Invalid vt")?;
                 let v: f64 = words[2].parse().map_err(|_| "Invalid vt")?;
-
+                // Flip V because your renderer expects 0 at top
                 uvs.push(Vec2 { x: u, y: 1.0 - v });
             }
-
             "vn" => {
-                if words.len() != 4 {
-                    return Err("Invalid vn");
-                }
                 normals.push(Vec3 {
                     x: words[1].parse().map_err(|_| "Invalid vn")?,
                     y: words[2].parse().map_err(|_| "Invalid vn")?,
                     z: words[3].parse().map_err(|_| "Invalid vn")?,
                 });
             }
-
             "f" => {
                 if words.len() != 4 {
-                    return Err("Mesh must be triangulated");
+                    return Err("Faces must be triangulated");
                 }
 
-                let mut face = [0usize; 3];
+                let mut face_indices = [0usize; 3];
 
                 for i in 0..3 {
                     let parts: Vec<&str> = words[i + 1].split('/').collect();
@@ -74,31 +63,39 @@ pub fn load_wavefront(path: &str) -> Result<Mesh, &str> {
                         return Err("Faces must be v/vt/vn");
                     }
 
-                    let pi = parts[0].parse::<usize>().map_err(|_| "Bad index")? - 1;
-                    let ti = parts[1].parse::<usize>().map_err(|_| "Bad index")? - 1;
-                    let ni = parts[2].parse::<usize>().map_err(|_| "Bad index")? - 1;
+                    let pi = parts[0]
+                        .parse::<usize>()
+                        .map_err(|_| "Invalid position index")?
+                        - 1;
+                    let ti = parts[1].parse::<usize>().map_err(|_| "Invalid uv index")? - 1;
+                    let ni = parts[2]
+                        .parse::<usize>()
+                        .map_err(|_| "Invalid normal index")?
+                        - 1;
 
                     let key = (pi, ti, ni);
 
-                    let index = if let Some(&idx) = vertex_map.get(&key) {
+                    let vertex_index = if let Some(&idx) = vertex_map.get(&key) {
                         idx
                     } else {
                         let p = positions[pi];
                         let uv = uvs[ti];
-
-                        let vtx = Vertex::new(p.x, p.y, p.z, uv.x, uv.y);
+                        let vertex = Vertex::new(p.x, p.y, p.z, uv.x, uv.y);
                         let idx = vertices.len();
-                        vertices.push(vtx);
+                        vertices.push(vertex);
                         vertex_map.insert(key, idx);
                         idx
                     };
 
-                    face[i] = index;
+                    face_indices[i] = vertex_index;
                 }
 
-                triangles.push(Triangle::new(face[0], face[1], face[2]));
+                triangles.push(Triangle::new(
+                    face_indices[0],
+                    face_indices[1],
+                    face_indices[2],
+                ));
             }
-
             _ => {}
         }
     }
