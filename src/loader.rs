@@ -17,7 +17,6 @@ pub fn load_wavefront(path: &str) -> Result<Mesh, &str> {
     let mut vertices: Vec<Vertex> = Vec::new();
     let mut triangles: Vec<Triangle> = Vec::new();
 
-    // Each triple of (position_index, uv_index, normal_index) maps to a unique vertex
     let mut vertex_map: HashMap<(usize, usize, usize), usize> = HashMap::new();
 
     for line in read_to_string(path)
@@ -103,7 +102,11 @@ pub fn load_wavefront(path: &str) -> Result<Mesh, &str> {
     Ok(Mesh {
         vertices,
         triangles,
-        centre: Vertex::new(0.0, 0.0, 0.0, 0.0, 0.0),
+        centre: Vec3 {
+            x: 0.0,
+            y: 0.0,
+            z: 0.0,
+        },
         rotate_around_pivot: false,
         pivot: None,
         texture: None,
