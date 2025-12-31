@@ -12,6 +12,7 @@ use pixels::{Pixels, SurfaceTexture};
 
 use crate::{
     camera::Camera,
+    loader::load_wavefront,
     math::{rotate_around_pivot, rotate_vertex},
     mesh::Mesh,
     primitives::{colour::Colour, texture::Texture, vertex::Vertex},
@@ -72,13 +73,12 @@ impl ApplicationHandler for App {
         self.window = Some(window);
         self.pixels = Some(pixels);
 
-        let mut cube = Mesh::cube(0.0, 0.0, 10.0, 5.0);
+        let mut cube = load_wavefront("assets/objects/cube.obj").expect("Failed to load OBJ");
         cube.texture = Some(
-            match Texture::from_file("assets/textures/interior_tiles.jpg") {
-                Ok(t) => t,
-                Err(e) => panic!("Problem loading texture: {e:?}"),
-            },
+            Texture::from_file("assets/textures/interior_tiles.jpg")
+                .expect("Failed to load texture"),
         );
+        cube.centre.z = 10.0;
 
         self.meshes.push(cube);
     }
