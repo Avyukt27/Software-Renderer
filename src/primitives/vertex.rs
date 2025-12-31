@@ -3,11 +3,13 @@ pub struct Vertex {
     pub x: f64,
     pub y: f64,
     pub z: f64,
+    pub u: f64,
+    pub v: f64,
 }
 
 impl Vertex {
-    pub fn new(x: f64, y: f64, z: f64) -> Self {
-        Self { x, y, z }
+    pub fn new(x: f64, y: f64, z: f64, u: f64, v: f64) -> Self {
+        Self { x, y, z, u, v }
     }
 
     pub fn normalize(&self) -> Self {

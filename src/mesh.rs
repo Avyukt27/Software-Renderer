@@ -16,7 +16,7 @@ impl Mesh {
         Self {
             vertices: Vec::new(),
             triangles: Vec::new(),
-            centre: Vertex::new(0.0, 0.0, 0.0),
+            centre: Vertex::new(0.0, 0.0, 0.0, 0.0, 0.0),
             rotate_around_pivot: false,
             pivot: None,
             colour: Colour::new(255, 255, 255, 255),
@@ -26,11 +26,7 @@ impl Mesh {
     pub fn cube(centre_x: f64, centre_y: f64, centre_z: f64, size: f64, colour: &Colour) -> Self {
         let mut mesh = Self::new();
         mesh.create_cube(size);
-        mesh.centre = Vertex {
-            x: centre_x,
-            y: centre_y,
-            z: centre_z,
-        };
+        mesh.centre = Vertex::new(centre_x, centre_y, centre_z, 0.0, 0.0);
         mesh.colour = *colour;
         mesh
     }
@@ -45,11 +41,7 @@ impl Mesh {
     ) -> Self {
         let mut mesh = Self::new();
         mesh.create_sphere(radius, segments);
-        mesh.centre = Vertex {
-            x: centre_x,
-            y: centre_y,
-            z: centre_z,
-        };
+        mesh.centre = Vertex::new(centre_x, centre_y, centre_z, 0.0, 0.0);
         mesh.colour = *colour;
         mesh
     }
@@ -58,14 +50,14 @@ impl Mesh {
 impl Mesh {
     fn create_cube(&mut self, size: f64) {
         let mut vertices = vec![
-            Vertex::new(-size / 2.0, -size / 2.0, size / 2.0),
-            Vertex::new(size / 2.0, -size / 2.0, size / 2.0),
-            Vertex::new(size / 2.0, size / 2.0, size / 2.0),
-            Vertex::new(-size / 2.0, size / 2.0, size / 2.0),
-            Vertex::new(-size / 2.0, -size / 2.0, -size / 2.0),
-            Vertex::new(size / 2.0, -size / 2.0, -size / 2.0),
-            Vertex::new(size / 2.0, size / 2.0, -size / 2.0),
-            Vertex::new(-size / 2.0, size / 2.0, -size / 2.0),
+            Vertex::new(-size / 2.0, -size / 2.0, size / 2.0, 0.0, 0.0),
+            Vertex::new(size / 2.0, -size / 2.0, size / 2.0, 0.0, 0.0),
+            Vertex::new(size / 2.0, size / 2.0, size / 2.0, 0.0, 0.0),
+            Vertex::new(-size / 2.0, size / 2.0, size / 2.0, 0.0, 0.0),
+            Vertex::new(-size / 2.0, -size / 2.0, -size / 2.0, 0.0, 0.0),
+            Vertex::new(size / 2.0, -size / 2.0, -size / 2.0, 0.0, 0.0),
+            Vertex::new(size / 2.0, size / 2.0, -size / 2.0, 0.0, 0.0),
+            Vertex::new(-size / 2.0, size / 2.0, -size / 2.0, 0.0, 0.0),
         ];
         self.vertices.append(&mut vertices);
 
@@ -99,7 +91,7 @@ impl Mesh {
                 let y = radius * theta.cos();
                 let z = radius * theta.sin() * phi.sin();
 
-                self.vertices.push(Vertex { x, y, z });
+                self.vertices.push(Vertex::new(x, y, z, 0.0, 0.0));
             }
         }
 

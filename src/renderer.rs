@@ -1,5 +1,3 @@
-use std::f64::INFINITY;
-
 use crate::math::is_back_facing;
 use crate::primitives::{colour::Colour, vertex::Vertex};
 
@@ -17,7 +15,7 @@ impl Renderer {
             width,
             height,
             buffer: vec![0; width * height * 4],
-            depth: vec![INFINITY; width * height],
+            depth: vec![f64::INFINITY; width * height],
         }
     }
 
@@ -30,7 +28,7 @@ impl Renderer {
         }
 
         for depth in self.depth.iter_mut() {
-            *depth = INFINITY;
+            *depth = f64::INFINITY;
         }
     }
 }
