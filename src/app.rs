@@ -15,7 +15,7 @@ use crate::{
     loader::load_wavefront,
     math::{rotate_around_pivot, rotate_vertex},
     mesh::Mesh,
-    primitives::{colour::Colour, texture::Texture, vertex::Vertex},
+    primitives::{colour::Colour, texture::Texture, vector::Vec3, vertex::Vertex},
     renderer::Renderer,
 };
 
@@ -73,12 +73,46 @@ impl ApplicationHandler for App {
         self.window = Some(window);
         self.pixels = Some(pixels);
 
-        let mut sphere = load_wavefront("assets/objects/sphere.obj").expect("Error loading OBJ");
-        // sphere.texture = Some(
-        //     Texture::from_file("assets/textures/blue_metal.jpg").expect("Error loading texture"),
-        // );
-        sphere.centre.z = 50.0;
-        self.meshes.push(sphere);
+        let meshes = vec![
+            Mesh::custom(
+                "assets/objects/cube.obj",
+                Some("assets/textures/interior_tiles.jpg"),
+                Vec3 {
+                    x: 0.0,
+                    y: 0.0,
+                    z: 10.0,
+                },
+            ),
+            Mesh::custom(
+                "assets/objects/sphere.obj",
+                Some("assets/textures/interior_tiles.jpg"),
+                Vec3 {
+                    x: 0.0,
+                    y: 0.0,
+                    z: 50.0,
+                },
+            ),
+            Mesh::custom(
+                "assets/objects/torus.obj",
+                None,
+                Vec3 {
+                    x: 10.0,
+                    y: 0.0,
+                    z: 25.0,
+                },
+            ),
+            Mesh::custom(
+                "assets/objects/susan.obj",
+                Some("assets/textures/blue_metal.jpg"),
+                Vec3 {
+                    x: 0.0,
+                    y: 20.0,
+                    z: 10.0,
+                },
+            ),
+        ];
+
+        self.meshes.extend(meshes);
     }
 
     fn window_event(
