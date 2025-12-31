@@ -23,6 +23,7 @@ impl Mesh {
         }
     }
 
+    #[allow(unused)]
     pub fn cube(centre_x: f64, centre_y: f64, centre_z: f64, size: f64) -> Self {
         let mut mesh = Self::new();
         mesh.create_cube(size);
@@ -30,6 +31,7 @@ impl Mesh {
         mesh
     }
 
+    #[allow(unused)]
     pub fn sphere(
         centre_x: f64,
         centre_y: f64,
@@ -45,6 +47,7 @@ impl Mesh {
 }
 
 impl Mesh {
+    #[allow(unused)]
     fn create_cube(&mut self, size: f64) {
         let half_size = size / 2.0;
         let start = self.vertices.len();
@@ -106,6 +109,7 @@ impl Mesh {
         }
     }
 
+    #[allow(unused)]
     fn create_sphere(&mut self, radius: f64, segments: usize) {
         self.vertices.clear();
         self.triangles.clear();
