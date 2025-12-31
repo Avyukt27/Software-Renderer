@@ -86,6 +86,18 @@ impl Renderer {
             return;
         }
 
+        let u0z = v0.u / v0.z;
+        let v0z = v0.v / v0.z;
+        let o0z = 1.0 / v0.z;
+
+        let u1z = v1.u / v1.z;
+        let v1z = v1.v / v1.z;
+        let o1z = 1.0 / v1.z;
+
+        let u2z = v2.u / v2.z;
+        let v2z = v2.v / v2.z;
+        let o2z = 1.0 / v2.z;
+
         for y in min_y..=max_y {
             for x in min_x..=max_x {
                 let w0 = edge(x1, y1, x2, y2, x, y);
@@ -93,42 +105,26 @@ impl Renderer {
                 let w2 = edge(x0, y0, x1, y1, x, y);
 
                 if (w0 >= 0 && w1 >= 0 && w2 >= 0) || (w0 <= 0 && w1 <= 0 && w2 <= 0) {
-                    let alpha = w0 as f64 / area as f64;
-                    let beta = w1 as f64 / area as f64;
-                    let gamma = w2 as f64 / area as f64;
+                    let a = w0 as f64 / area as f64;
+                    let b = w1 as f64 / area as f64;
+                    let c = w2 as f64 / area as f64;
 
-                    let depth = alpha * v0.z + beta * v1.z + gamma * v2.z;
-
-                    let u_over_z0 = v0.u / v0.z;
-                    let v_over_z0 = v0.v / v0.z;
-                    let one_over_z0 = 1.0 / v0.z;
-
-                    let u_over_z1 = v1.u / v1.z;
-                    let v_over_z1 = v1.v / v1.z;
-                    let one_over_z1 = 1.0 / v1.z;
-
-                    let u_over_z2 = v2.u / v2.z;
-                    let v_over_z2 = v2.v / v2.z;
-                    let one_over_z2 = 1.0 / v2.z;
-
-                    let u_over_z = alpha * u_over_z0 + beta * u_over_z1 + gamma * u_over_z2;
-                    let v_over_z = alpha * v_over_z0 + beta * v_over_z1 + gamma * v_over_z2;
-                    let one_over_z = alpha * one_over_z0 + beta * one_over_z1 + gamma * one_over_z2;
+                    let u_over_z = a * u0z + b * u1z + c * u2z;
+                    let v_over_z = a * v0z + b * v1z + c * v2z;
+                    let one_over_z = a * o0z + b * o1z + c * o2z;
 
                     let u = u_over_z / one_over_z;
                     let v = v_over_z / one_over_z;
 
-                    if let Some(t) = texture {
-                        let c = t.sample(u, v);
-                        self.put_pixel_depth(x as usize, y as usize, depth, c);
+                    let depth = 1.0 / one_over_z;
+
+                    let colour = if let Some(t) = texture {
+                        t.sample(u, v)
                     } else {
-                        self.put_pixel_depth(
-                            x as usize,
-                            y as usize,
-                            depth,
-                            Colour::new(255, 19, 240, 255),
-                        );
-                    }
+                        Colour::new(255, 0, 255, 255)
+                    };
+
+                    self.put_pixel_depth(x as usize, y as usize, depth, colour);
                 }
             }
         }
