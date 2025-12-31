@@ -1,4 +1,4 @@
-use crate::primitives::{colour::Colour, texture::Texture, triangle::Triangle, vertex::Vertex};
+use crate::primitives::{texture::Texture, triangle::Triangle, vertex::Vertex};
 use std::f64::consts::PI;
 
 #[derive(Debug)]
