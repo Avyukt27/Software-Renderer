@@ -8,6 +8,7 @@ pub struct Texture {
 }
 
 impl Texture {
+    #[allow(unused)]
     pub fn from_file(path: &str) -> Result<Self, String> {
         let img = image::open(path).map_err(|e| e.to_string())?.to_rgba8();
         let (width, height) = img.dimensions();
@@ -37,6 +38,7 @@ impl Texture {
 }
 
 impl Texture {
+    #[allow(unused)]
     pub fn checkerboard(size: usize) -> Self {
         let mut pixels = Vec::new();
 
@@ -48,6 +50,29 @@ impl Texture {
                     Colour::new(0, 0, 0, 255)
                 };
                 pixels.push(c);
+            }
+        }
+
+        Self {
+            width: size,
+            height: size,
+            data: pixels,
+        }
+    }
+
+    #[allow(unused)]
+    pub fn debug(size: usize) -> Self {
+        let mut pixels = Vec::new();
+
+        for y in 0..size {
+            for x in 0..size {
+                let u = x as f64 / (size - 1) as f64;
+                let v = y as f64 / (size - 1) as f64;
+
+                let r = (u * 255.0) as u8;
+                let g = (v * 255.0) as u8;
+
+                pixels.push(Colour::new(r, g, 0, 255));
             }
         }
 

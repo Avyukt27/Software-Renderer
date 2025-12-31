@@ -72,8 +72,8 @@ impl ApplicationHandler for App {
         self.window = Some(window);
         self.pixels = Some(pixels);
 
-        let mut cube = Mesh::cube(0.0, 10.0, 10.0, 5.0);
-        // cube.texture = Some(Texture::checkerboard(320));
+        let mut cube = Mesh::cube(0.0, 0.0, 10.0, 5.0);
+        cube.texture = Some(Texture::debug(1000));
 
         self.meshes.extend([cube]);
     }
