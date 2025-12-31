@@ -74,18 +74,8 @@ impl ApplicationHandler for App {
 
         let mut meshes = vec![
             Mesh::cube(0.0, 5.0, 20.0, 5.0, &Colour::new(255, 0, 0, 255)),
-            Mesh::sphere(0.0, 0.0, 10.0, 5.0, 20, &Colour::new(0, 255, 0, 255)),
+            // Mesh::sphere(0.0, 0.0, 10.0, 5.0, 20, &Colour::new(0, 255, 0, 255)),
         ];
-
-        let mut orbiting_sphere =
-            Mesh::sphere(10.0, 0.0, 2.0, 1.0, 8, &Colour::new(0, 0, 255, 255));
-        orbiting_sphere.rotate_around_pivot = true;
-        orbiting_sphere.pivot = Some(Vertex {
-            x: 0.0,
-            y: 0.0,
-            z: 0.0,
-        });
-        meshes.push(orbiting_sphere);
 
         self.meshes.append(&mut meshes);
     }
@@ -153,11 +143,13 @@ impl ApplicationHandler for App {
                         .map(|v| {
                             let local_rotated = rotate_vertex(v, self.angles);
 
-                            let mut world = Vertex {
-                                x: local_rotated.x + mesh.centre.x,
-                                y: local_rotated.y + mesh.centre.y,
-                                z: local_rotated.z + mesh.centre.z,
-                            };
+                            let mut world = Vertex::new(
+                                local_rotated.x + mesh.centre.x,
+                                local_rotated.y + mesh.centre.y,
+                                local_rotated.z + mesh.centre.z,
+                                local_rotated.u,
+                                local_rotated.v,
+                            );
 
                             if let Some(p) = pivot {
                                 world = rotate_around_pivot(&world, p, self.angles);

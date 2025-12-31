@@ -14,11 +14,7 @@ pub struct Camera {
 impl Camera {
     pub fn new(screen_width: usize, screen_height: usize) -> Self {
         Self {
-            position: Vertex {
-                x: 0.0,
-                y: 0.0,
-                z: 0.0,
-            },
+            position: Vertex::new(0.0, 0.0, 0.0, 0.0, 0.0),
             rotation: (0.0, 0.0, 0.0),
             fov: 90.0,
             near: 0.1,
@@ -54,7 +50,7 @@ impl Camera {
         y = yz;
         z = zz;
 
-        Vertex { x, y, z }
+        Vertex::new(x, y, z, world.u, world.v)
     }
 
     pub fn project_perspective(&self, world: &Vertex) -> Option<Vertex> {
@@ -70,10 +66,12 @@ impl Camera {
         let x = (v.x * f / aspect) / v.z;
         let y = (v.y * f) / v.z;
 
-        Some(Vertex {
-            x: x * self.screen_width as f64 * 0.5 + self.screen_width as f64 * 0.5,
-            y: -y * self.screen_height as f64 * 0.5 + self.screen_height as f64 * 0.5,
-            z: v.z,
-        })
+        Some(Vertex::new(
+            x * self.screen_width as f64 * 0.5 + self.screen_width as f64 * 0.5,
+            -y * self.screen_height as f64 * 0.5 + self.screen_height as f64 * 0.5,
+            v.z,
+            v.u,
+            v.v,
+        ))
     }
 }
