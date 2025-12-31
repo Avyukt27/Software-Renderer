@@ -13,77 +13,60 @@ pub fn load_wavefront(path: &str) -> Result<Mesh, &str> {
     let mut positions: Vec<Vec3> = Vec::new();
     let mut uvs: Vec<Vec2> = Vec::new();
     let mut normals: Vec<Vec3> = Vec::new();
+
     let mut vertices: Vec<Vertex> = Vec::new();
     let mut triangles: Vec<Triangle> = Vec::new();
+
     let mut vertex_map: HashMap<(usize, usize, usize), usize> = HashMap::new();
 
-    for line in read_to_string(path).unwrap().lines() {
+    for line in read_to_string(path)
+        .map_err(|_| "Failed to read OBJ")?
+        .lines()
+    {
         let words: Vec<&str> = line.split_whitespace().collect();
-
-        if words.is_empty() || words[0].starts_with("#") {
+        if words.is_empty() || words[0].starts_with('#') {
             continue;
         }
 
         match words[0] {
             "v" => {
                 if words.len() != 4 {
-                    return Err("Invalid vertex positions");
+                    return Err("Invalid vertex");
                 }
-
-                let x = match words[1].parse() {
-                    Ok(num) => num,
-                    Err(_) => return Err("Invalid vertex position"),
-                };
-                let y = match words[2].parse() {
-                    Ok(num) => num,
-                    Err(_) => return Err("Invalid vertex position"),
-                };
-                let z = match words[3].parse() {
-                    Ok(num) => num,
-                    Err(_) => return Err("Invalid vertex position"),
-                };
-                positions.push(Vec3 { x: x, y: y, z: z });
+                positions.push(Vec3 {
+                    x: words[1].parse().map_err(|_| "Invalid v")?,
+                    y: words[2].parse().map_err(|_| "Invalid v")?,
+                    z: words[3].parse().map_err(|_| "Invalid v")?,
+                });
             }
-            "vn" => {
-                if words.len() != 4 {
-                    return Err("Invalid vertex normals");
-                }
 
-                let x = match words[1].parse() {
-                    Ok(num) => num,
-                    Err(_) => return Err("Invalid vertex position"),
-                };
-                let y = match words[2].parse() {
-                    Ok(num) => num,
-                    Err(_) => return Err("Invalid vertex position"),
-                };
-                let z = match words[3].parse() {
-                    Ok(num) => num,
-                    Err(_) => return Err("Invalid vertex position"),
-                };
-                normals.push(Vec3 { x: x, y: y, z: z });
-            }
             "vt" => {
                 if words.len() < 3 {
-                    return Err("Invalid texture coordinates");
+                    return Err("Invalid vt");
                 }
+                let u: f64 = words[1].parse().map_err(|_| "Invalid vt")?;
+                let v: f64 = words[2].parse().map_err(|_| "Invalid vt")?;
 
-                let x = match words[1].parse() {
-                    Ok(num) => num,
-                    Err(_) => return Err("Invalid vertex position"),
-                };
-                let y: f64 = match words[2].parse() {
-                    Ok(num) => num,
-                    Err(_) => return Err("Invalid vertex position"),
-                };
-                uvs.push(Vec2 { x: x, y: 1.0 - y });
+                uvs.push(Vec2 { x: u, y: 1.0 - v });
             }
+
+            "vn" => {
+                if words.len() != 4 {
+                    return Err("Invalid vn");
+                }
+                normals.push(Vec3 {
+                    x: words[1].parse().map_err(|_| "Invalid vn")?,
+                    y: words[2].parse().map_err(|_| "Invalid vn")?,
+                    z: words[3].parse().map_err(|_| "Invalid vn")?,
+                });
+            }
+
             "f" => {
                 if words.len() != 4 {
-                    return Err("Faces are not triangulated");
+                    return Err("Mesh must be triangulated");
                 }
 
-                let mut face_indices = [0usize; 3];
+                let mut face = [0usize; 3];
 
                 for i in 0..3 {
                     let parts: Vec<&str> = words[i + 1].split('/').collect();
@@ -91,89 +74,39 @@ pub fn load_wavefront(path: &str) -> Result<Mesh, &str> {
                         return Err("Faces must be v/vt/vn");
                     }
 
-                    let position_index: usize =
-                        parts[0].parse().map_err(|_| "Invalid position index")?;
-                    let texture_index: usize =
-                        parts[1].parse().map_err(|_| "Invalid texture index")?;
-                    let normal_index: usize =
-                        parts[2].parse().map_err(|_| "Invalid normal index")?;
+                    let pi = parts[0].parse::<usize>().map_err(|_| "Bad index")? - 1;
+                    let ti = parts[1].parse::<usize>().map_err(|_| "Bad index")? - 1;
+                    let ni = parts[2].parse::<usize>().map_err(|_| "Bad index")? - 1;
 
-                    let key = (position_index - 1, texture_index - 1, normal_index - 1);
+                    let key = (pi, ti, ni);
 
-                    let vertex_index = if let Some(&idx) = vertex_map.get(&key) {
+                    let index = if let Some(&idx) = vertex_map.get(&key) {
                         idx
                     } else {
-                        let position = positions[key.0];
-                        let uv = uvs[key.1];
-                        let n = normals[key.2];
+                        let p = positions[pi];
+                        let uv = uvs[ti];
 
-                        let vertex = Vertex::new(position.x, position.y, position.z, uv.x, uv.y);
-
+                        let vtx = Vertex::new(p.x, p.y, p.z, uv.x, uv.y);
                         let idx = vertices.len();
-                        vertices.push(vertex);
+                        vertices.push(vtx);
                         vertex_map.insert(key, idx);
                         idx
                     };
 
-                    face_indices[i] = vertex_index as usize;
+                    face[i] = index;
                 }
 
-                triangles.push(Triangle::new(
-                    face_indices[0],
-                    face_indices[1],
-                    face_indices[2],
-                ));
+                triangles.push(Triangle::new(face[0], face[1], face[2]));
             }
+
             _ => {}
         }
     }
 
-    let mut min = Vec3 {
-        x: f64::INFINITY,
-        y: f64::INFINITY,
-        z: f64::INFINITY,
-    };
-    let mut max = Vec3 {
-        x: f64::NEG_INFINITY,
-        y: f64::NEG_INFINITY,
-        z: f64::NEG_INFINITY,
-    };
-
-    for v in &vertices {
-        min.x = min.x.min(v.x);
-        min.y = min.y.min(v.y);
-        min.z = min.z.min(v.z);
-
-        max.x = max.x.max(v.x);
-        max.y = max.y.max(v.y);
-        max.z = max.z.max(v.z);
-    }
-
-    let centre = Vertex::new(
-        (min.x + max.x) * 0.5,
-        (min.y + max.y) * 0.5,
-        (min.z + max.z) * 0.5,
-        0.0,
-        0.0,
-    );
-
-    for v in &mut vertices {
-        v.x -= centre.x;
-        v.y -= centre.y;
-        v.z -= centre.z;
-    }
-
-    println!("{:?}", positions.len());
-    println!("{:?}", uvs.len());
-    println!("{:?}", normals.len());
-    println!("{:?}", vertices.len());
-
-    println!("{:?}", vertices);
-
     Ok(Mesh {
         vertices,
         triangles,
-        centre,
+        centre: Vertex::new(0.0, 0.0, 0.0, 0.0, 0.0),
         rotate_around_pivot: false,
         pivot: None,
         texture: None,
