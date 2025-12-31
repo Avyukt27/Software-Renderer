@@ -2,6 +2,7 @@ use winit::event_loop::EventLoop;
 
 mod app;
 mod camera;
+mod loader;
 mod math;
 mod mesh;
 mod primitives;
