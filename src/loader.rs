@@ -15,7 +15,7 @@ pub fn load_wavefront(path: &str) -> Result<Mesh, &str> {
     let mut normals: Vec<Vec3> = Vec::new();
     let mut vertices: Vec<Vertex> = Vec::new();
     let mut triangles: Vec<Triangle> = Vec::new();
-    let mut vertex_map: HashMap<(usize, usize, usize), u32> = HashMap::new();
+    let mut vertex_map: HashMap<(usize, usize, usize), usize> = HashMap::new();
 
     for line in read_to_string(path).unwrap().lines() {
         let words: Vec<&str> = line.split_whitespace().collect();
@@ -111,8 +111,8 @@ pub fn load_wavefront(path: &str) -> Result<Mesh, &str> {
 
                         let idx = vertices.len();
                         vertices.push(vertex);
-                        vertex_map.insert(key, idx as u32);
-                        idx as u32
+                        vertex_map.insert(key, idx);
+                        idx
                     };
 
                     face_indices[i] = vertex_index as usize;
@@ -162,6 +162,13 @@ pub fn load_wavefront(path: &str) -> Result<Mesh, &str> {
         v.y -= centre.y;
         v.z -= centre.z;
     }
+
+    println!("{:?}", positions.len());
+    println!("{:?}", uvs.len());
+    println!("{:?}", normals.len());
+    println!("{:?}", vertices.len());
+
+    println!("{:?}", vertices);
 
     Ok(Mesh {
         vertices,
