@@ -9,7 +9,6 @@ pub struct Mesh {
     pub rotate_around_pivot: bool,
     pub pivot: Option<Vertex>,
     pub texture: Option<Texture>,
-    pub colour: Option<Colour>,
 }
 
 impl Mesh {
@@ -21,15 +20,13 @@ impl Mesh {
             rotate_around_pivot: false,
             pivot: None,
             texture: None,
-            colour: Some(Colour::new(255, 255, 255, 255)),
         }
     }
 
-    pub fn cube(centre_x: f64, centre_y: f64, centre_z: f64, size: f64, colour: &Colour) -> Self {
+    pub fn cube(centre_x: f64, centre_y: f64, centre_z: f64, size: f64) -> Self {
         let mut mesh = Self::new();
         mesh.create_cube(size);
         mesh.centre = Vertex::new(centre_x, centre_y, centre_z, 0.0, 0.0);
-        mesh.colour = Some(*colour);
         mesh
     }
 
@@ -39,12 +36,10 @@ impl Mesh {
         centre_z: f64,
         radius: f64,
         segments: usize,
-        colour: &Colour,
     ) -> Self {
         let mut mesh = Self::new();
         mesh.create_sphere(radius, segments);
         mesh.centre = Vertex::new(centre_x, centre_y, centre_z, 0.0, 0.0);
-        mesh.colour = Some(*colour);
         mesh
     }
 }
