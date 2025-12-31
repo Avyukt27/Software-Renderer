@@ -74,10 +74,16 @@ impl ApplicationHandler for App {
         self.pixels = Some(pixels);
 
         let mut cube1 = load_wavefront("assets/objects/cube.obj").expect("Failed to load OBJ");
-        cube1.texture = Some(Texture::debug(1000));
-        cube1.centre.z = 10.0;
+        cube1.texture = Some(
+            Texture::from_file("assets/textures/interior_tiles.jpg")
+                .expect("Failed to load texture"),
+        );
+        cube1.centre.z = 50.0;
         let mut cube2 = Mesh::cube(10.0, 10.0, 10.0, 5.0);
-        cube2.texture = Some(Texture::debug(1000));
+        cube2.texture = Some(
+            Texture::from_file("assets/textures/interior_tiles.jpg")
+                .expect("Failed to load texture"),
+        );
 
         self.meshes.push(cube1);
         self.meshes.push(cube2);
