@@ -12,10 +12,9 @@ use pixels::{Pixels, SurfaceTexture};
 
 use crate::{
     camera::Camera,
-    loader::load_wavefront,
     math::{rotate_around_pivot, rotate_vertex},
     mesh::Mesh,
-    primitives::{colour::Colour, texture::Texture, vector::Vec3, vertex::Vertex},
+    primitives::{colour::Colour, vector::Vec3, vertex::Vertex},
     renderer::Renderer,
 };
 
@@ -73,7 +72,7 @@ impl ApplicationHandler for App {
         self.window = Some(window);
         self.pixels = Some(pixels);
 
-        let meshes = vec![
+        let mut meshes = vec![
             Mesh::custom(
                 "assets/objects/cube.obj",
                 Some("assets/textures/interior_tiles.jpg"),
@@ -111,6 +110,13 @@ impl ApplicationHandler for App {
                 },
             ),
         ];
+
+        meshes[3].rotate_around_pivot = true;
+        meshes[3].pivot = Some(Vec3 {
+            x: 0.0,
+            y: 0.0,
+            z: 10.0,
+        });
 
         self.meshes.extend(meshes);
     }

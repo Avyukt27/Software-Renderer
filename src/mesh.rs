@@ -9,7 +9,7 @@ pub struct Mesh {
     pub triangles: Vec<Triangle>,
     pub centre: Vec3,
     pub rotate_around_pivot: bool,
-    pub pivot: Option<Vertex>,
+    pub pivot: Option<Vec3>,
     pub texture: Option<Texture>,
 }
 
