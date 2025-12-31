@@ -1,10 +1,11 @@
-use crate::primitives::{colour::Colour, triangle::Triangle, vertex::Vertex};
+use crate::primitives::{colour::Colour, texture::Texture, triangle::Triangle, vertex::Vertex};
 use std::f64::consts::PI;
 
 #[derive(Debug)]
 pub struct Mesh {
     pub vertices: Vec<Vertex>,
     pub triangles: Vec<Triangle>,
+    pub texture: Option<Texture>,
     pub centre: Vertex,
     pub rotate_around_pivot: bool,
     pub pivot: Option<Vertex>,
@@ -16,6 +17,7 @@ impl Mesh {
         Self {
             vertices: Vec::new(),
             triangles: Vec::new(),
+            texture: None,
             centre: Vertex::new(0.0, 0.0, 0.0, 0.0, 0.0),
             rotate_around_pivot: false,
             pivot: None,
@@ -49,32 +51,64 @@ impl Mesh {
 
 impl Mesh {
     fn create_cube(&mut self, size: f64) {
-        let mut vertices = vec![
-            Vertex::new(-size / 2.0, -size / 2.0, size / 2.0, 0.0, 0.0),
-            Vertex::new(size / 2.0, -size / 2.0, size / 2.0, 0.0, 0.0),
-            Vertex::new(size / 2.0, size / 2.0, size / 2.0, 0.0, 0.0),
-            Vertex::new(-size / 2.0, size / 2.0, size / 2.0, 0.0, 0.0),
-            Vertex::new(-size / 2.0, -size / 2.0, -size / 2.0, 0.0, 0.0),
-            Vertex::new(size / 2.0, -size / 2.0, -size / 2.0, 0.0, 0.0),
-            Vertex::new(size / 2.0, size / 2.0, -size / 2.0, 0.0, 0.0),
-            Vertex::new(-size / 2.0, size / 2.0, -size / 2.0, 0.0, 0.0),
-        ];
-        self.vertices.append(&mut vertices);
+        let half_size = size / 2.0;
+        let start = self.vertices.len();
 
-        self.triangles.extend([
-            Triangle::new(0, 1, 2),
-            Triangle::new(0, 2, 3),
-            Triangle::new(5, 4, 7),
-            Triangle::new(5, 7, 6),
-            Triangle::new(4, 0, 3),
-            Triangle::new(4, 3, 7),
-            Triangle::new(1, 5, 6),
-            Triangle::new(1, 6, 2),
-            Triangle::new(3, 2, 6),
-            Triangle::new(3, 6, 7),
-            Triangle::new(4, 5, 1),
-            Triangle::new(4, 1, 0),
+        // Front face
+        self.vertices.extend([
+            Vertex::new(-half_size, -half_size, half_size, 0.0, 1.0),
+            Vertex::new(half_size, -half_size, half_size, 1.0, 1.0),
+            Vertex::new(half_size, half_size, half_size, 1.0, 0.0),
+            Vertex::new(-half_size, half_size, half_size, 0.0, 0.0),
         ]);
+
+        // Back face
+        self.vertices.extend([
+            Vertex::new(half_size, -half_size, -half_size, 0.0, 1.0),
+            Vertex::new(-half_size, -half_size, -half_size, 1.0, 1.0),
+            Vertex::new(-half_size, half_size, -half_size, 1.0, 0.0),
+            Vertex::new(half_size, half_size, -half_size, 0.0, 0.0),
+        ]);
+
+        // Left face
+        self.vertices.extend([
+            Vertex::new(-half_size, -half_size, -half_size, 0.0, 1.0),
+            Vertex::new(-half_size, -half_size, half_size, 1.0, 1.0),
+            Vertex::new(-half_size, half_size, half_size, 1.0, 0.0),
+            Vertex::new(-half_size, half_size, -half_size, 0.0, 0.0),
+        ]);
+
+        // Right face
+        self.vertices.extend([
+            Vertex::new(half_size, -half_size, half_size, 0.0, 1.0),
+            Vertex::new(half_size, -half_size, -half_size, 1.0, 1.0),
+            Vertex::new(half_size, half_size, -half_size, 1.0, 0.0),
+            Vertex::new(half_size, half_size, half_size, 0.0, 0.0),
+        ]);
+
+        // Top face
+        self.vertices.extend([
+            Vertex::new(-half_size, half_size, half_size, 0.0, 1.0),
+            Vertex::new(half_size, half_size, half_size, 1.0, 1.0),
+            Vertex::new(half_size, half_size, -half_size, 1.0, 0.0),
+            Vertex::new(-half_size, half_size, -half_size, 0.0, 0.0),
+        ]);
+
+        // Bottom face
+        self.vertices.extend([
+            Vertex::new(-half_size, -half_size, -half_size, 0.0, 1.0),
+            Vertex::new(half_size, -half_size, -half_size, 1.0, 1.0),
+            Vertex::new(half_size, -half_size, half_size, 1.0, 0.0),
+            Vertex::new(-half_size, -half_size, half_size, 0.0, 0.0),
+        ]);
+
+        for i in 0..6 {
+            let base = start + i * 4;
+            self.triangles.extend([
+                Triangle::new(base, base + 1, base + 2),
+                Triangle::new(base, base + 2, base + 3),
+            ]);
+        }
     }
 
     fn create_sphere(&mut self, radius: f64, segments: usize) {
