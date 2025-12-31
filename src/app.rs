@@ -14,7 +14,7 @@ use crate::{
     camera::Camera,
     math::{rotate_around_pivot, rotate_vertex},
     mesh::Mesh,
-    primitives::{colour::Colour, vertex::Vertex},
+    primitives::{colour::Colour, texture::Texture, vertex::Vertex},
     renderer::Renderer,
 };
 
@@ -72,12 +72,13 @@ impl ApplicationHandler for App {
         self.window = Some(window);
         self.pixels = Some(pixels);
 
-        let mut meshes = vec![
-            Mesh::cube(0.0, 5.0, 20.0, 5.0, &Colour::new(255, 0, 0, 255)),
-            // Mesh::sphere(0.0, 0.0, 10.0, 5.0, 20, &Colour::new(0, 255, 0, 255)),
-        ];
+        let mut cube = Mesh::cube(0.0, 0.0, 10.0, 5.0);
+        cube.texture = Some(match Texture::from_file("assets/interior_tiles.jpg") {
+            Ok(t) => t,
+            Err(e) => panic!("Problem loading texture: {e:?}"),
+        });
 
-        self.meshes.append(&mut meshes);
+        self.meshes.extend([cube]);
     }
 
     fn window_event(
@@ -170,7 +171,7 @@ impl ApplicationHandler for App {
                             &view_vertices[triangle.i1],
                             &view_vertices[triangle.i2],
                         ) {
-                            self.renderer.fill_triangle(v0, v1, v2, mesh.colour);
+                            self.renderer.fill_triangle(v0, v1, v2, &mesh.texture);
                         }
                     }
                 }
