@@ -73,20 +73,12 @@ impl ApplicationHandler for App {
         self.window = Some(window);
         self.pixels = Some(pixels);
 
-        let mut cube1 = load_wavefront("assets/objects/cube.obj").expect("Failed to load OBJ");
-        cube1.texture = Some(
-            Texture::from_file("assets/textures/interior_tiles.jpg")
-                .expect("Failed to load texture"),
-        );
-        cube1.centre.z = 50.0;
-        let mut cube2 = Mesh::cube(10.0, 10.0, 10.0, 5.0);
-        cube2.texture = Some(
-            Texture::from_file("assets/textures/interior_tiles.jpg")
-                .expect("Failed to load texture"),
-        );
-
-        self.meshes.push(cube1);
-        self.meshes.push(cube2);
+        let mut sphere = load_wavefront("assets/objects/sphere.obj").expect("Error loading OBJ");
+        // sphere.texture = Some(
+        //     Texture::from_file("assets/textures/blue_metal.jpg").expect("Error loading texture"),
+        // );
+        sphere.centre.z = 50.0;
+        self.meshes.push(sphere);
     }
 
     fn window_event(
