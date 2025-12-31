@@ -1,4 +1,5 @@
 use crate::math::is_back_facing;
+use crate::primitives::texture::Texture;
 use crate::primitives::{colour::Colour, vertex::Vertex};
 
 #[derive(Debug)]
@@ -52,7 +53,13 @@ impl Renderer {
         }
     }
 
-    pub fn fill_triangle(&mut self, v0: &Vertex, v1: &Vertex, v2: &Vertex, colour: Option<Colour>) {
+    pub fn fill_triangle(
+        &mut self,
+        v0: &Vertex,
+        v1: &Vertex,
+        v2: &Vertex,
+        texture: &Option<Texture>,
+    ) {
         if is_back_facing(v0, v1, v2) {
             return;
         }
@@ -91,9 +98,19 @@ impl Renderer {
                     let gamma = w2 as f64 / area as f64;
 
                     let depth = alpha * v0.z + beta * v1.z + gamma * v2.z;
+                    let u = alpha * v0.u + beta * v1.u + gamma * v2.u;
+                    let v = alpha * v0.v + beta * v1.v + gamma * v2.v;
 
-                    if let Some(c) = colour {
+                    if let Some(t) = texture {
+                        let c = t.sample(u, v);
                         self.put_pixel_depth(x as usize, y as usize, depth, c);
+                    } else {
+                        self.put_pixel_depth(
+                            x as usize,
+                            y as usize,
+                            depth,
+                            Colour::new(255, 19, 240, 255),
+                        );
                     }
                 }
             }

@@ -73,7 +73,7 @@ impl ApplicationHandler for App {
         self.pixels = Some(pixels);
 
         let mut meshes = vec![
-            Mesh::cube(0.0, 5.0, 20.0, 5.0, &Colour::new(255, 0, 0, 255)),
+            Mesh::cube(0.0, 5.0, 20.0, 5.0),
             // Mesh::sphere(0.0, 0.0, 10.0, 5.0, 20, &Colour::new(0, 255, 0, 255)),
         ];
 
@@ -170,7 +170,7 @@ impl ApplicationHandler for App {
                             &view_vertices[triangle.i1],
                             &view_vertices[triangle.i2],
                         ) {
-                            self.renderer.fill_triangle(v0, v1, v2, mesh.colour);
+                            self.renderer.fill_triangle(v0, v1, v2, &mesh.texture);
                         }
                     }
                 }
