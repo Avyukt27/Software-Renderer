@@ -5,11 +5,11 @@ use std::f64::consts::PI;
 pub struct Mesh {
     pub vertices: Vec<Vertex>,
     pub triangles: Vec<Triangle>,
-    pub texture: Option<Texture>,
     pub centre: Vertex,
     pub rotate_around_pivot: bool,
     pub pivot: Option<Vertex>,
-    pub colour: Colour,
+    pub texture: Option<Texture>,
+    pub colour: Option<Colour>,
 }
 
 impl Mesh {
@@ -17,11 +17,11 @@ impl Mesh {
         Self {
             vertices: Vec::new(),
             triangles: Vec::new(),
-            texture: None,
             centre: Vertex::new(0.0, 0.0, 0.0, 0.0, 0.0),
             rotate_around_pivot: false,
             pivot: None,
-            colour: Colour::new(255, 255, 255, 255),
+            texture: None,
+            colour: Some(Colour::new(255, 255, 255, 255)),
         }
     }
 
@@ -29,7 +29,7 @@ impl Mesh {
         let mut mesh = Self::new();
         mesh.create_cube(size);
         mesh.centre = Vertex::new(centre_x, centre_y, centre_z, 0.0, 0.0);
-        mesh.colour = *colour;
+        mesh.colour = Some(*colour);
         mesh
     }
 
@@ -44,7 +44,7 @@ impl Mesh {
         let mut mesh = Self::new();
         mesh.create_sphere(radius, segments);
         mesh.centre = Vertex::new(centre_x, centre_y, centre_z, 0.0, 0.0);
-        mesh.colour = *colour;
+        mesh.colour = Some(*colour);
         mesh
     }
 }

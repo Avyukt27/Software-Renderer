@@ -52,7 +52,7 @@ impl Renderer {
         }
     }
 
-    pub fn fill_triangle(&mut self, v0: &Vertex, v1: &Vertex, v2: &Vertex, colour: Colour) {
+    pub fn fill_triangle(&mut self, v0: &Vertex, v1: &Vertex, v2: &Vertex, colour: Option<Colour>) {
         if is_back_facing(v0, v1, v2) {
             return;
         }
@@ -92,7 +92,9 @@ impl Renderer {
 
                     let depth = alpha * v0.z + beta * v1.z + gamma * v2.z;
 
-                    self.put_pixel_depth(x as usize, y as usize, depth, colour);
+                    if let Some(c) = colour {
+                        self.put_pixel_depth(x as usize, y as usize, depth, c);
+                    }
                 }
             }
         }
