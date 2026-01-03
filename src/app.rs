@@ -216,7 +216,7 @@ impl ApplicationHandler for App {
                             &view_vertices[triangle.i2],
                             &triangle.material_index,
                         ) {
-                            self.renderer.fill_triangle(v0, v1, v2);
+                            self.renderer.fill_triangle(v0, v1, v2, &mesh.materials[*m]);
                         }
                     }
                 }

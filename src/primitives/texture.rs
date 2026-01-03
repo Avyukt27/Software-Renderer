@@ -1,3 +1,5 @@
+use std::path::Path;
+
 use crate::primitives::colour::Colour;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -9,7 +11,7 @@ pub struct Texture {
 
 impl Texture {
     #[allow(unused)]
-    pub fn from_file(path: &str) -> Result<Self, String> {
+    pub fn from_file(path: &Path) -> Result<Self, String> {
         let img = image::open(path).map_err(|e| e.to_string())?.to_rgba8();
         let (width, height) = img.dimensions();
         let mut pixels = Vec::with_capacity((width * height) as usize);

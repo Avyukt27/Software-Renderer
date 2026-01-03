@@ -4,7 +4,7 @@ use crate::primitives::{colour::Colour, texture::Texture};
 pub struct Material {
     pub name: String,
     pub diffuse: Colour,
-    pub texture: Option<Texture>,
+    pub kd_texture: Option<Texture>,
 }
 
 impl Default for Material {
@@ -12,7 +12,7 @@ impl Default for Material {
         Self {
             name: String::from(""),
             diffuse: Colour::new(255, 255, 255, 255),
-            texture: None,
+            kd_texture: None,
         }
     }
 }
