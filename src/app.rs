@@ -210,10 +210,11 @@ impl ApplicationHandler for App {
                         .collect();
 
                     for triangle in &mesh.triangles {
-                        if let (Some(v0), Some(v1), Some(v2)) = (
+                        if let (Some(v0), Some(v1), Some(v2), m) = (
                             &view_vertices[triangle.i0],
                             &view_vertices[triangle.i1],
                             &view_vertices[triangle.i2],
+                            &triangle.material_index,
                         ) {
                             self.renderer.fill_triangle(v0, v1, v2);
                         }

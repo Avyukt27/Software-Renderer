@@ -59,6 +59,13 @@ pub fn load_wavefront(path: &Path) -> Result<Mesh, &str> {
                     return Err("Faces must be triangulated");
                 }
 
+                let material_index: usize;
+
+                match materials.iter().position(|m| m == &current_material) {
+                    Some(i) => material_index = i,
+                    None => return Err("Invalid material"),
+                }
+
                 let mut face_indices = [0usize; 3];
 
                 for i in 0..3 {
@@ -98,6 +105,7 @@ pub fn load_wavefront(path: &Path) -> Result<Mesh, &str> {
                     face_indices[0],
                     face_indices[1],
                     face_indices[2],
+                    material_index,
                 ));
             }
             "mtllib" => {
@@ -116,6 +124,16 @@ pub fn load_wavefront(path: &Path) -> Result<Mesh, &str> {
                     None => return Err("Invalid mtl path"),
                 }
             }
+            "usemtl" => {
+                if words.len() != 2 {
+                    return Err("Invalid mtl usage");
+                }
+
+                match materials.iter().find(|&material| material.name == words[1]) {
+                    Some(m) => current_material = m.clone(),
+                    None => return Err("Invalid material name"),
+                }
+            }
             _ => {}
         }
     }
@@ -130,6 +148,7 @@ pub fn load_wavefront(path: &Path) -> Result<Mesh, &str> {
         },
         rotate_around_pivot: false,
         pivot: None,
+        materials: materials,
     })
 }
 
