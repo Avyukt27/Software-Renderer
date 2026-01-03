@@ -1,4 +1,4 @@
-use std::sync::Arc;
+use std::{path::Path, sync::Arc};
 
 use winit::{
     application::ApplicationHandler,
@@ -74,8 +74,7 @@ impl ApplicationHandler for App {
 
         let mut meshes = vec![
             Mesh::custom(
-                "assets/objects/cube.obj",
-                Some("assets/textures/interior_tiles.jpg"),
+                Path::new("assets/objects/cube.obj"),
                 Vec3 {
                     x: 0.0,
                     y: 0.0,
@@ -83,8 +82,7 @@ impl ApplicationHandler for App {
                 },
             ),
             Mesh::custom(
-                "assets/objects/sphere.obj",
-                Some("assets/textures/interior_tiles.jpg"),
+                Path::new("assets/objects/sphere.obj"),
                 Vec3 {
                     x: 0.0,
                     y: 0.0,
@@ -92,8 +90,7 @@ impl ApplicationHandler for App {
                 },
             ),
             Mesh::custom(
-                "assets/objects/torus.obj",
-                None,
+                Path::new("assets/objects/torus.obj"),
                 Vec3 {
                     x: 10.0,
                     y: 0.0,
@@ -101,8 +98,7 @@ impl ApplicationHandler for App {
                 },
             ),
             Mesh::custom(
-                "assets/objects/susan.obj",
-                Some("assets/textures/blue_metal.jpg"),
+                Path::new("assets/objects/susan.obj"),
                 Vec3 {
                     x: 0.0,
                     y: 20.0,
@@ -118,7 +114,15 @@ impl ApplicationHandler for App {
             z: 10.0,
         });
 
-        self.meshes.extend(meshes);
+        // self.meshes.extend(meshes);
+        self.meshes.push(Mesh::custom(
+            Path::new("assets/objects/material_cube.obj"),
+            Vec3 {
+                x: 0.0,
+                y: 0.0,
+                z: 10.0,
+            },
+        ))
     }
 
     fn window_event(
@@ -206,12 +210,13 @@ impl ApplicationHandler for App {
                         .collect();
 
                     for triangle in &mesh.triangles {
-                        if let (Some(v0), Some(v1), Some(v2)) = (
+                        if let (Some(v0), Some(v1), Some(v2), m) = (
                             &view_vertices[triangle.i0],
                             &view_vertices[triangle.i1],
                             &view_vertices[triangle.i2],
+                            &triangle.material_index,
                         ) {
-                            self.renderer.fill_triangle(v0, v1, v2, &mesh.texture);
+                            self.renderer.fill_triangle(v0, v1, v2, &mesh.materials[*m]);
                         }
                     }
                 }

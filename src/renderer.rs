@@ -1,5 +1,5 @@
 use crate::math::is_back_facing;
-use crate::primitives::texture::Texture;
+use crate::primitives::material::Material;
 use crate::primitives::{colour::Colour, vertex::Vertex};
 
 #[derive(Debug)]
@@ -53,13 +53,7 @@ impl Renderer {
         }
     }
 
-    pub fn fill_triangle(
-        &mut self,
-        v0: &Vertex,
-        v1: &Vertex,
-        v2: &Vertex,
-        texture: &Option<Texture>,
-    ) {
+    pub fn fill_triangle(&mut self, v0: &Vertex, v1: &Vertex, v2: &Vertex, m: &Material) {
         if is_back_facing(v0, v1, v2) {
             return;
         }
@@ -118,10 +112,10 @@ impl Renderer {
 
                     let depth = 1.0 / one_over_z;
 
-                    let colour = if let Some(t) = texture {
+                    let colour = if let Some(t) = &m.kd_texture {
                         t.sample(u, v)
                     } else {
-                        Colour::new(255, 0, 255, 255)
+                        m.diffuse
                     };
 
                     self.put_pixel_depth(x as usize, y as usize, depth, colour);
