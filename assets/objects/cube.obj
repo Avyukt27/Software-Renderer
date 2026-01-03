@@ -1,6 +1,5 @@
 # Blender 5.0.1
 # www.blender.org
-mtllib cube.mtl
 o Cube
 v -5.000000 -5.000000 5.000000
 v -5.000000 5.000000 5.000000

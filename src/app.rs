@@ -1,4 +1,4 @@
-use std::sync::Arc;
+use std::{path::Path, sync::Arc};
 
 use winit::{
     application::ApplicationHandler,
@@ -12,7 +12,6 @@ use pixels::{Pixels, SurfaceTexture};
 
 use crate::{
     camera::Camera,
-    loader::load_materials,
     math::{rotate_around_pivot, rotate_vertex},
     mesh::Mesh,
     primitives::{colour::Colour, vector::Vec3, vertex::Vertex},
@@ -75,8 +74,7 @@ impl ApplicationHandler for App {
 
         let mut meshes = vec![
             Mesh::custom(
-                "assets/objects/cube.obj",
-                Some("assets/textures/interior_tiles.jpg"),
+                Path::new("assets/objects/cube.obj"),
                 Vec3 {
                     x: 0.0,
                     y: 0.0,
@@ -84,8 +82,7 @@ impl ApplicationHandler for App {
                 },
             ),
             Mesh::custom(
-                "assets/objects/sphere.obj",
-                Some("assets/textures/interior_tiles.jpg"),
+                Path::new("assets/objects/sphere.obj"),
                 Vec3 {
                     x: 0.0,
                     y: 0.0,
@@ -93,8 +90,7 @@ impl ApplicationHandler for App {
                 },
             ),
             Mesh::custom(
-                "assets/objects/torus.obj",
-                None,
+                Path::new("assets/objects/torus.obj"),
                 Vec3 {
                     x: 10.0,
                     y: 0.0,
@@ -102,8 +98,7 @@ impl ApplicationHandler for App {
                 },
             ),
             Mesh::custom(
-                "assets/objects/susan.obj",
-                Some("assets/textures/blue_metal.jpg"),
+                Path::new("assets/objects/susan.obj"),
                 Vec3 {
                     x: 0.0,
                     y: 20.0,
@@ -119,12 +114,9 @@ impl ApplicationHandler for App {
             z: 10.0,
         });
 
-        println!("{:?}", load_materials("assets/objects/material_cube.mtl"));
-
         // self.meshes.extend(meshes);
         self.meshes.push(Mesh::custom(
-            "assets/objects/material_cube.obj",
-            None,
+            Path::new("assets/objects/material_cube.obj"),
             Vec3 {
                 x: 0.0,
                 y: 0.0,
@@ -223,7 +215,7 @@ impl ApplicationHandler for App {
                             &view_vertices[triangle.i1],
                             &view_vertices[triangle.i2],
                         ) {
-                            self.renderer.fill_triangle(v0, v1, v2, &mesh.texture);
+                            self.renderer.fill_triangle(v0, v1, v2);
                         }
                     }
                 }

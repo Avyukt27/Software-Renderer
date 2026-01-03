@@ -12,7 +12,7 @@ use crate::{
     },
 };
 
-pub fn load_wavefront(path: Path) -> Result<Mesh, &str> {
+pub fn load_wavefront(path: &Path) -> Result<Mesh, &str> {
     let mut positions: Vec<Vec3> = Vec::new();
     let mut uvs: Vec<Vec2> = Vec::new();
     let mut normals: Vec<Vec3> = Vec::new();
@@ -22,6 +22,8 @@ pub fn load_wavefront(path: Path) -> Result<Mesh, &str> {
     let mut triangles: Vec<Triangle> = Vec::new();
 
     let mut vertex_map: HashMap<(usize, usize, usize), usize> = HashMap::new();
+
+    let mut current_material = Material::default();
 
     for line in read_to_string(path)
         .map_err(|_| "Failed to read OBJ")?
@@ -43,7 +45,6 @@ pub fn load_wavefront(path: Path) -> Result<Mesh, &str> {
             "vt" => {
                 let u: f64 = words[1].parse().map_err(|_| "Invalid vt")?;
                 let v: f64 = words[2].parse().map_err(|_| "Invalid vt")?;
-                // Flip V because your renderer expects 0 at top
                 uvs.push(Vec2 { x: u, y: 1.0 - v });
             }
             "vn" => {
@@ -104,10 +105,13 @@ pub fn load_wavefront(path: Path) -> Result<Mesh, &str> {
                     return Err("Invalid mtl loading");
                 }
 
-                let parent = Path::new(words[1]).parent();
+                let parent = path.parent();
                 match parent {
                     Some(p) => {
-                        materials.extend(load_materials(&path).expect("Issue reading mtl file"));
+                        materials.extend(
+                            load_materials(&p.join(Path::new(words[1])))
+                                .expect("Issue reading mtl file"),
+                        );
                     }
                     None => return Err("Invalid mtl path"),
                 }
@@ -126,7 +130,6 @@ pub fn load_wavefront(path: Path) -> Result<Mesh, &str> {
         },
         rotate_around_pivot: false,
         pivot: None,
-        texture: None,
     })
 }
 
@@ -158,19 +161,19 @@ pub fn load_materials(path: &Path) -> Result<Vec<Material>, &str> {
                 material.name = String::from(words[1]);
             }
 
-            "Ka" => {
+            "Kd" => {
                 if material == Material::default() {
                     return Err("Invalid MTL file");
                 }
                 if words.len() != 4 {
-                    return Err("Invalid ambient colour");
+                    return Err("Invalid diffuse colour");
                 }
 
                 let red: f64 = words[1].parse().map_err(|_| "Invalid colour")?;
                 let green: f64 = words[2].parse().map_err(|_| "Invalid colour")?;
                 let blue: f64 = words[3].parse().map_err(|_| "Invalid colour")?;
 
-                material.ambient = Colour::new(
+                material.diffuse = Colour::new(
                     (red.clamp(0.0, 1.0) * 255.0).round() as u8,
                     (green.clamp(0.0, 1.0) * 255.0).round() as u8,
                     (blue.clamp(0.0, 1.0) * 255.0).round() as u8,
@@ -188,20 +191,20 @@ pub fn load_materials(path: &Path) -> Result<Vec<Material>, &str> {
 
                 let alpha: f64 = words[1].parse().map_err(|_| "Invalid dissolve")?;
 
-                material.ambient = Colour::new(
-                    material.ambient.red,
-                    material.ambient.green,
-                    material.ambient.blue,
+                material.diffuse = Colour::new(
+                    material.diffuse.red,
+                    material.diffuse.green,
+                    material.diffuse.blue,
                     (alpha.clamp(0.0, 1.0) * 255.0).round() as u8,
                 );
             }
 
-            "map_Ka" => {
+            "map_Kd" => {
                 if material == Material::default() {
                     return Err("Invalid MTL file");
                 }
                 if words.len() != 2 {
-                    return Err("Invalid dissolve");
+                    return Err("Invalid texture");
                 }
 
                 material.texture =

@@ -53,13 +53,7 @@ impl Renderer {
         }
     }
 
-    pub fn fill_triangle(
-        &mut self,
-        v0: &Vertex,
-        v1: &Vertex,
-        v2: &Vertex,
-        texture: &Option<Texture>,
-    ) {
+    pub fn fill_triangle(&mut self, v0: &Vertex, v1: &Vertex, v2: &Vertex) {
         if is_back_facing(v0, v1, v2) {
             return;
         }
@@ -118,11 +112,7 @@ impl Renderer {
 
                     let depth = 1.0 / one_over_z;
 
-                    let colour = if let Some(t) = texture {
-                        t.sample(u, v)
-                    } else {
-                        Colour::new(255, 0, 255, 255)
-                    };
+                    let colour = Colour::new(255, 0, 255, 255);
 
                     self.put_pixel_depth(x as usize, y as usize, depth, colour);
                 }
