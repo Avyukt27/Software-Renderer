@@ -12,6 +12,7 @@ use pixels::{Pixels, SurfaceTexture};
 
 use crate::{
     camera::Camera,
+    loader::load_materials,
     math::{rotate_around_pivot, rotate_vertex},
     mesh::Mesh,
     primitives::{colour::Colour, vector::Vec3, vertex::Vertex},
@@ -117,6 +118,8 @@ impl ApplicationHandler for App {
             y: 0.0,
             z: 10.0,
         });
+
+        println!("{:?}", load_materials("assets/objects/material_cube.mtl"));
 
         // self.meshes.extend(meshes);
         self.meshes.push(Mesh::custom(

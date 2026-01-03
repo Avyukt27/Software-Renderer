@@ -1,4 +1,4 @@
-use std::{collections::HashMap, fs::read_to_string};
+use std::{collections::HashMap, fs::read_to_string, path::Path};
 
 use crate::{
     mesh::Mesh,
@@ -12,10 +12,11 @@ use crate::{
     },
 };
 
-pub fn load_wavefront(path: &str) -> Result<Mesh, &str> {
+pub fn load_wavefront(path: Path) -> Result<Mesh, &str> {
     let mut positions: Vec<Vec3> = Vec::new();
     let mut uvs: Vec<Vec2> = Vec::new();
     let mut normals: Vec<Vec3> = Vec::new();
+    let mut materials: Vec<Material> = Vec::new();
 
     let mut vertices: Vec<Vertex> = Vec::new();
     let mut triangles: Vec<Triangle> = Vec::new();
@@ -98,6 +99,19 @@ pub fn load_wavefront(path: &str) -> Result<Mesh, &str> {
                     face_indices[2],
                 ));
             }
+            "mtllib" => {
+                if words.len() != 2 {
+                    return Err("Invalid mtl loading");
+                }
+
+                let parent = Path::new(words[1]).parent();
+                match parent {
+                    Some(p) => {
+                        materials.extend(load_materials(&path).expect("Issue reading mtl file"));
+                    }
+                    None => return Err("Invalid mtl path"),
+                }
+            }
             _ => {}
         }
     }
@@ -116,7 +130,7 @@ pub fn load_wavefront(path: &str) -> Result<Mesh, &str> {
     })
 }
 
-pub fn load_material(path: &str) -> Result<Vec<Material>, &str> {
+pub fn load_materials(path: &Path) -> Result<Vec<Material>, &str> {
     let mut materials: Vec<Material> = Vec::new();
     let mut material = Material::default();
 
@@ -125,6 +139,10 @@ pub fn load_material(path: &str) -> Result<Vec<Material>, &str> {
         .lines()
     {
         let words: Vec<&str> = line.split_whitespace().collect();
+
+        if words.len() == 0 {
+            continue;
+        }
 
         match words[0] {
             "newmtl" => {
