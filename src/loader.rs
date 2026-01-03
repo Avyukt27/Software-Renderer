@@ -5,6 +5,7 @@ use crate::{
     primitives::{
         colour::Colour,
         material::Material,
+        texture::Texture,
         triangle::Triangle,
         vector::{Vec2, Vec3},
         vertex::Vertex,
@@ -143,7 +144,6 @@ pub fn load_material(path: &str) -> Result<Vec<Material>, &str> {
                 if material == Material::default() {
                     return Err("Invalid MTL file");
                 }
-
                 if words.len() != 4 {
                     return Err("Invalid ambient colour");
                 }
@@ -161,6 +161,9 @@ pub fn load_material(path: &str) -> Result<Vec<Material>, &str> {
             }
 
             "d" => {
+                if material == Material::default() {
+                    return Err("Invalid MTL file");
+                }
                 if words.len() != 2 {
                     return Err("Invalid dissolve");
                 }
@@ -175,9 +178,23 @@ pub fn load_material(path: &str) -> Result<Vec<Material>, &str> {
                 );
             }
 
+            "map_Ka" => {
+                if material == Material::default() {
+                    return Err("Invalid MTL file");
+                }
+                if words.len() != 2 {
+                    return Err("Invalid dissolve");
+                }
+
+                material.texture =
+                    Some(Texture::from_file(words[1]).map_err(|_| "Invalid texture")?);
+            }
+
             _ => {}
         }
     }
+
+    materials.push(material);
 
     Ok(materials)
 }
