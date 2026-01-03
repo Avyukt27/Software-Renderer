@@ -72,51 +72,8 @@ impl ApplicationHandler for App {
         self.window = Some(window);
         self.pixels = Some(pixels);
 
-        let mut meshes = vec![
-            Mesh::custom(
-                Path::new("assets/objects/cube.obj"),
-                Vec3 {
-                    x: 0.0,
-                    y: 0.0,
-                    z: 10.0,
-                },
-            ),
-            Mesh::custom(
-                Path::new("assets/objects/sphere.obj"),
-                Vec3 {
-                    x: 0.0,
-                    y: 0.0,
-                    z: 50.0,
-                },
-            ),
-            Mesh::custom(
-                Path::new("assets/objects/torus.obj"),
-                Vec3 {
-                    x: 10.0,
-                    y: 0.0,
-                    z: 25.0,
-                },
-            ),
-            Mesh::custom(
-                Path::new("assets/objects/susan.obj"),
-                Vec3 {
-                    x: 0.0,
-                    y: 20.0,
-                    z: 10.0,
-                },
-            ),
-        ];
-
-        meshes[3].rotate_around_pivot = true;
-        meshes[3].pivot = Some(Vec3 {
-            x: 0.0,
-            y: 0.0,
-            z: 10.0,
-        });
-
-        // self.meshes.extend(meshes);
         self.meshes.push(Mesh::custom(
-            Path::new("assets/objects/material_cube.obj"),
+            Path::new("assets/objects/skull.obj"),
             Vec3 {
                 x: 0.0,
                 y: 0.0,
