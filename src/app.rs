@@ -118,7 +118,16 @@ impl ApplicationHandler for App {
             z: 10.0,
         });
 
-        self.meshes.extend(meshes);
+        // self.meshes.extend(meshes);
+        self.meshes.push(Mesh::custom(
+            "assets/objects/material_cube.obj",
+            None,
+            Vec3 {
+                x: 0.0,
+                y: 0.0,
+                z: 10.0,
+            },
+        ))
     }
 
     fn window_event(
