@@ -1,6 +1,6 @@
 use crate::primitives::colour::Colour;
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Texture {
     pub width: usize,
     pub height: usize,

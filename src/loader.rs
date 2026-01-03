@@ -3,6 +3,8 @@ use std::{collections::HashMap, fs::read_to_string};
 use crate::{
     mesh::Mesh,
     primitives::{
+        colour::Colour,
+        material::Material,
         triangle::Triangle,
         vector::{Vec2, Vec3},
         vertex::Vertex,
@@ -111,4 +113,71 @@ pub fn load_wavefront(path: &str) -> Result<Mesh, &str> {
         pivot: None,
         texture: None,
     })
+}
+
+pub fn load_material(path: &str) -> Result<Vec<Material>, &str> {
+    let mut materials: Vec<Material> = Vec::new();
+    let mut material = Material::default();
+
+    for line in read_to_string(path)
+        .map_err(|_| "Failed to read MTL")?
+        .lines()
+    {
+        let words: Vec<&str> = line.split_whitespace().collect();
+
+        match words[0] {
+            "newmtl" => {
+                if words.len() != 2 {
+                    return Err("Invalid newmtl");
+                }
+
+                if materials.len() != 0 {
+                    materials.push(material.clone());
+                    material = Material::default();
+                }
+
+                material.name = String::from(words[1]);
+            }
+
+            "Ka" => {
+                if material == Material::default() {
+                    return Err("Invalid MTL file");
+                }
+
+                if words.len() != 4 {
+                    return Err("Invalid ambient colour");
+                }
+
+                let red: f64 = words[1].parse().map_err(|_| "Invalid colour")?;
+                let green: f64 = words[2].parse().map_err(|_| "Invalid colour")?;
+                let blue: f64 = words[3].parse().map_err(|_| "Invalid colour")?;
+
+                material.ambient = Colour::new(
+                    (red.clamp(0.0, 1.0) * 255.0).round() as u8,
+                    (green.clamp(0.0, 1.0) * 255.0).round() as u8,
+                    (blue.clamp(0.0, 1.0) * 255.0).round() as u8,
+                    255,
+                );
+            }
+
+            "d" => {
+                if words.len() != 2 {
+                    return Err("Invalid dissolve");
+                }
+
+                let alpha: f64 = words[1].parse().map_err(|_| "Invalid dissolve")?;
+
+                material.ambient = Colour::new(
+                    material.ambient.red,
+                    material.ambient.green,
+                    material.ambient.blue,
+                    (alpha.clamp(0.0, 1.0) * 255.0).round() as u8,
+                );
+            }
+
+            _ => {}
+        }
+    }
+
+    Ok(materials)
 }
