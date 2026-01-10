@@ -1,8 +1,8 @@
-use crate::primitives::vertex::Vertex;
+use crate::primitives::{vector::Vec3, vertex::Vertex};
 
 #[derive(Debug, Clone)]
 pub struct Camera {
-    pub position: Vertex,
+    pub position: Vec3,
     pub rotation: (f32, f32, f32),
     pub fov: f64,
     pub near: f64,
@@ -14,7 +14,7 @@ pub struct Camera {
 impl Camera {
     pub fn new(screen_width: usize, screen_height: usize) -> Self {
         Self {
-            position: Vertex::new(0.0, 0.0, 0.0, 0.0, 0.0),
+            position: Vec3::new(0.0, 0.0, 0.0),
             rotation: (0.0, 0.0, 0.0),
             fov: 90.0,
             near: 0.1,

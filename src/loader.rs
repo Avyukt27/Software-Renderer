@@ -25,11 +25,9 @@ pub fn load_wavefront(path: &Path) -> Result<Mesh, String> {
     let mut triangles: Vec<Triangle> = Vec::new();
     let mut vertex_map: HashMap<(usize, usize, usize), usize> = HashMap::new();
 
-    // ---- Materials ----
     let mut materials: Vec<Material> = Vec::new();
     let mut material_lookup: HashMap<String, usize> = HashMap::new();
 
-    // Default material (index 0)
     materials.push(Material {
         name: "__default".to_string(),
         diffuse: Colour::new(255, 255, 255, 255),
@@ -39,7 +37,6 @@ pub fn load_wavefront(path: &Path) -> Result<Mesh, String> {
 
     let mut current_material_index: usize = 0;
 
-    // ---- OBJ parsing ----
     for line in read_to_string(path)
         .map_err(|_| "Failed to read OBJ")?
         .lines()
@@ -54,11 +51,11 @@ pub fn load_wavefront(path: &Path) -> Result<Mesh, String> {
                 if words.len() != 4 {
                     return Err(String::from("Invalid vertex"));
                 }
-                positions.push(Vec3 {
-                    x: words[1].parse().map_err(|_| "Invalid vertex")?,
-                    y: words[2].parse().map_err(|_| "Invalid vertex")?,
-                    z: words[3].parse().map_err(|_| "Invalid vertex")?,
-                });
+                positions.push(Vec3::new(
+                    words[1].parse().map_err(|_| "Invalid vertex")?,
+                    words[2].parse().map_err(|_| "Invalid vertex")?,
+                    words[3].parse().map_err(|_| "Invalid vertex")?,
+                ));
             }
 
             "vt" => {
@@ -67,18 +64,18 @@ pub fn load_wavefront(path: &Path) -> Result<Mesh, String> {
                 }
                 let u: f64 = words[1].parse().map_err(|_| "Invalid vt")?;
                 let v: f64 = words[2].parse().map_err(|_| "Invalid vt")?;
-                uvs.push(Vec2 { x: u, y: 1.0 - v });
+                uvs.push(Vec2::new(u, 1.0 - v));
             }
 
             "vn" => {
                 if words.len() != 4 {
                     return Err(String::from("Invalid vn"));
                 }
-                normals.push(Vec3 {
-                    x: words[1].parse().map_err(|_| "Invalid vn")?,
-                    y: words[2].parse().map_err(|_| "Invalid vn")?,
-                    z: words[3].parse().map_err(|_| "Invalid vn")?,
-                });
+                normals.push(Vec3::new(
+                    words[1].parse().map_err(|_| "Invalid vn")?,
+                    words[2].parse().map_err(|_| "Invalid vn")?,
+                    words[3].parse().map_err(|_| "Invalid vn")?,
+                ));
             }
 
             "f" => {
@@ -156,11 +153,7 @@ pub fn load_wavefront(path: &Path) -> Result<Mesh, String> {
     Ok(Mesh {
         vertices,
         triangles,
-        centre: Vec3 {
-            x: 0.0,
-            y: 0.0,
-            z: 0.0,
-        },
+        centre: Vec3::new(0.0, 0.0, 0.0),
         rotate_around_pivot: false,
         pivot: None,
         materials,
