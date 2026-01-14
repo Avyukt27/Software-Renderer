@@ -1,6 +1,6 @@
 use std::{
     collections::HashMap,
-    fs::read_to_string,
+    fs::{File, read_to_string},
     path::{Path, PathBuf},
 };
 
@@ -228,4 +228,10 @@ pub fn load_materials(path: PathBuf) -> Result<Vec<Material>, String> {
     }
 
     Ok(materials)
+}
+
+pub fn load_glb(path: PathBuf) -> Result<(), String> {
+    let mut file = File::open(path).map_err(|_| "Failed to read GLB file")?;
+
+    Ok(())
 }

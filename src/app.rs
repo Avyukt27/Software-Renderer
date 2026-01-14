@@ -73,13 +73,21 @@ impl ApplicationHandler for App {
         self.pixels = Some(pixels);
 
         self.meshes.push(Mesh::custom(
+            Path::new("assets/objects/pillow.obj"),
+            Vec3 {
+                x: 0.0,
+                y: -2.0,
+                z: 10.0,
+            },
+        ));
+        self.meshes.push(Mesh::custom(
             Path::new("assets/objects/skull.obj"),
             Vec3 {
                 x: 0.0,
                 y: 0.0,
                 z: 10.0,
             },
-        ))
+        ));
     }
 
     fn window_event(
