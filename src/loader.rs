@@ -8,6 +8,7 @@ use crate::{
     mesh::Mesh,
     primitives::{
         colour::Colour,
+        glb_format::{GlbChunk, GlbHeader},
         material::Material,
         texture::Texture,
         triangle::Triangle,
@@ -232,6 +233,16 @@ pub fn load_materials(path: PathBuf) -> Result<Vec<Material>, String> {
 
 pub fn load_glb(path: PathBuf) -> Result<(), String> {
     let mut file = File::open(path).map_err(|_| "Failed to read GLB file")?;
+
+    let header = GlbHeader::read_from(&mut file).map_err(|_| "Failed to read header")?;
+
+    if header.magic != 0x46546C67 {
+        return Err(String::from("Invalid glB file"));
+    }
+
+    let chunk0 = GlbChunk::read_from(&mut file).map_err(|_| "Failed to read chunk 0")?;
+
+    println!("{:?}\n{:?}", header, chunk0);
 
     Ok(())
 }

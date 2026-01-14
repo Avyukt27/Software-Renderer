@@ -6,7 +6,6 @@ mod loader;
 mod math;
 mod mesh;
 mod primitives;
-mod reader;
 mod renderer;
 
 use app::App;

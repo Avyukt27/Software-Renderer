@@ -12,6 +12,7 @@ use pixels::{Pixels, SurfaceTexture};
 
 use crate::{
     camera::Camera,
+    loader::load_glb,
     math::{rotate_around_pivot, rotate_vertex},
     mesh::Mesh,
     primitives::{colour::Colour, vector::Vec3, vertex::Vertex},
@@ -72,22 +73,24 @@ impl ApplicationHandler for App {
         self.window = Some(window);
         self.pixels = Some(pixels);
 
-        self.meshes.push(Mesh::custom(
-            Path::new("assets/objects/pillow.obj"),
-            Vec3 {
-                x: 0.0,
-                y: -2.0,
-                z: 10.0,
-            },
-        ));
-        self.meshes.push(Mesh::custom(
-            Path::new("assets/objects/skull.obj"),
-            Vec3 {
-                x: 0.0,
-                y: 0.0,
-                z: 10.0,
-            },
-        ));
+        load_glb(Path::new("assets/objects/tiled_cube/tiled_cube.glb").to_path_buf());
+
+        // self.meshes.push(Mesh::custom(
+        //     Path::new("assets/objects/pillow.obj"),
+        //     Vec3 {
+        //         x: 0.0,
+        //         y: -2.0,
+        //         z: 10.0,
+        //     },
+        // ));
+        // self.meshes.push(Mesh::custom(
+        //     Path::new("assets/objects/skull.obj"),
+        //     Vec3 {
+        //         x: 0.0,
+        //         y: 0.0,
+        //         z: 10.0,
+        //     },
+        // ));
     }
 
     fn window_event(
