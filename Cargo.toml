@@ -4,7 +4,3 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
-byteorder = "1.5.0"
-image = "0.25.9"
-pixels = "0.15.0"
-winit = "0.30.12"
