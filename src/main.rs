@@ -2,6 +2,7 @@ use winit::event_loop::EventLoop;
 
 mod app;
 mod renderer;
+mod vertex;
 
 fn main() {
     let event_loop = EventLoop::new().unwrap();
