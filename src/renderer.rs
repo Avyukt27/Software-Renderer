@@ -67,4 +67,15 @@ impl Renderer {
             size,
         }
     }
+
+    pub fn resize(&mut self, new_size: (u32, u32)) {
+        if new_size.0 == 0 || new_size.1 == 0 {
+            return;
+        }
+
+        self.size = new_size;
+        self.surface_config.width = new_size.0;
+        self.surface_config.height = new_size.1;
+        self.surface.configure(&self.device, &self.surface_config);
+    }
 }
