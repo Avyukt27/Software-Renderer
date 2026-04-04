@@ -6,7 +6,7 @@ use winit::window::Window;
 use crate::{mesh::Mesh, vertex::Vertex};
 
 pub struct Renderer {
-    window: Arc<Window>,
+    _window: Arc<Window>,
     device: wgpu::Device,
     queue: wgpu::Queue,
     pipeline: wgpu::RenderPipeline,
@@ -111,7 +111,7 @@ impl Renderer {
         });
 
         Renderer {
-            window,
+            _window: window,
             device,
             queue,
             pipeline,
