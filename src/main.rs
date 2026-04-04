@@ -1,6 +1,7 @@
 use winit::event_loop::EventLoop;
 
 mod app;
+mod renderer;
 
 fn main() {
     let event_loop = EventLoop::new().unwrap();
