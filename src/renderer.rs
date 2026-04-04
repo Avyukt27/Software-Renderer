@@ -3,7 +3,7 @@ use std::sync::Arc;
 use wgpu::util::DeviceExt;
 use winit::window::Window;
 
-use crate::vertex::Vertex;
+use crate::{mesh::Mesh, vertex::Vertex};
 
 pub struct Renderer {
     window: Arc<Window>,
@@ -210,5 +210,29 @@ impl Renderer {
 
         self.queue.submit(std::iter::once(encoder.finish()));
         frame.present();
+    }
+
+    pub fn upload_mesh(&self, vertices: &[Vertex], indices: &[u16]) -> Mesh {
+        let vertex_buffer = self
+            .device
+            .create_buffer_init(&wgpu::util::BufferInitDescriptor {
+                label: Some("Vertex Buffer"),
+                contents: bytemuck::cast_slice(vertices),
+                usage: wgpu::BufferUsages::VERTEX,
+            });
+
+        let index_buffer = self
+            .device
+            .create_buffer_init(&wgpu::util::BufferInitDescriptor {
+                label: Some("Index Buffer"),
+                contents: bytemuck::cast_slice(indices),
+                usage: wgpu::BufferUsages::INDEX,
+            });
+
+        Mesh {
+            vertex_buffer,
+            index_buffer,
+            index_count: indices.len() as u32,
+        }
     }
 }
