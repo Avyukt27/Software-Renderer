@@ -1,5 +1,6 @@
 use std::sync::Arc;
 
+use wgpu::util::DeviceExt;
 use winit::window::Window;
 
 use crate::vertex::Vertex;
@@ -9,6 +10,8 @@ pub struct Renderer {
     device: wgpu::Device,
     queue: wgpu::Queue,
     pipeline: wgpu::RenderPipeline,
+    vertex_buffer: wgpu::Buffer,
+    vertex_count: u32,
     surface: wgpu::Surface<'static>,
     surface_config: wgpu::SurfaceConfiguration,
     size: (u32, u32),
@@ -109,11 +112,34 @@ impl Renderer {
             cache: None,
         });
 
+        let vertices = vec![
+            Vertex {
+                position: [0.0, 0.5, 0.0],
+                colour: [1.0, 0.0, 0.0, 1.0],
+            },
+            Vertex {
+                position: [-0.5, -0.5, 0.0],
+                colour: [0.0, 1.0, 0.0, 1.0],
+            },
+            Vertex {
+                position: [0.5, -0.5, 0.0],
+                colour: [0.0, 0.0, 1.0, 1.0],
+            },
+        ];
+        let vertex_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
+            label: Some("Vertex Buffer"),
+            contents: bytemuck::cast_slice(&vertices),
+            usage: wgpu::BufferUsages::VERTEX,
+        });
+        let vertex_count = vertices.len() as u32;
+
         Renderer {
             window,
             device,
             queue,
             pipeline,
+            vertex_buffer,
+            vertex_count,
             surface,
             surface_config,
             size,
@@ -155,7 +181,7 @@ impl Renderer {
             });
 
         {
-            let _pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
+            let mut pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
                 label: Some("Clear Pass"),
                 color_attachments: &[Some(wgpu::RenderPassColorAttachment {
                     view: &view,
@@ -164,7 +190,7 @@ impl Renderer {
                     ops: wgpu::Operations {
                         load: wgpu::LoadOp::Clear(wgpu::Color {
                             r: 0.0,
-                            g: 1.0,
+                            g: 0.0,
                             b: 0.0,
                             a: 1.0,
                         }),
@@ -176,6 +202,10 @@ impl Renderer {
                 occlusion_query_set: None,
                 multiview_mask: None,
             });
+
+            pass.set_pipeline(&self.pipeline);
+            pass.set_vertex_buffer(0, self.vertex_buffer.slice(..));
+            pass.draw(0..self.vertex_count, 0..1);
         }
 
         self.queue.submit(std::iter::once(encoder.finish()));
