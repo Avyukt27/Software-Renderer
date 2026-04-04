@@ -17,6 +17,24 @@ use crate::{
     },
 };
 
+#[derive(Debug, PartialEq, Eq)]
+enum MagicNumbers {
+    GlbStart,
+    GlbJsonChunk,
+    GlbBinChunk,
+}
+
+impl MagicNumbers {
+    fn from_u32(value: u32) -> Option<Self> {
+        match value {
+            0x46546C67 => Some(Self::GlbStart),
+            0x4E4F534A => Some(Self::GlbJsonChunk),
+            0x004E4942 => Some(Self::GlbBinChunk),
+            _ => None,
+        }
+    }
+}
+
 pub fn load_wavefront(path: &Path) -> Result<Mesh, String> {
     let mut positions: Vec<Vec3> = Vec::new();
     let mut uvs: Vec<Vec2> = Vec::new();
@@ -233,16 +251,33 @@ pub fn load_materials(path: PathBuf) -> Result<Vec<Material>, String> {
 
 pub fn load_glb(path: PathBuf) -> Result<(), String> {
     let mut file = File::open(path).map_err(|_| "Failed to read GLB file")?;
-
     let header = GlbHeader::read_from(&mut file).map_err(|_| "Failed to read header")?;
 
-    if header.magic != 0x46546C67 {
-        return Err(String::from("Invalid glB file"));
+    match MagicNumbers::from_u32(header.magic) {
+        Some(MagicNumbers::GlbStart) => {}
+        _ => return Err(String::from("Invalid GLB file")),
     }
 
-    let chunk0 = GlbChunk::read_from(&mut file).map_err(|_| "Failed to read chunk 0")?;
+    let mut bytes_read: u32 = 12;
+    let mut json = None;
+    let mut bin = None;
 
-    println!("{:?}\n{:?}", header, chunk0);
+    while bytes_read < header.length {
+        let chunk = GlbChunk::read_from(&mut file).map_err(|_| "Failed to read chunk")?;
+        bytes_read += 8 + chunk.chunk_length;
+
+        match MagicNumbers::from_u32(chunk.chunk_type) {
+            Some(MagicNumbers::GlbJsonChunk) => {
+                json = Some(chunk.chunk_data);
+            }
+            Some(MagicNumbers::GlbBinChunk) => {
+                bin = Some(chunk.chunk_data);
+            }
+            _ => {}
+        }
+    }
+
+    let json = json.ok_or_else(|| "Invalid GLB file, missing JSON chunk")?;
 
     Ok(())
 }

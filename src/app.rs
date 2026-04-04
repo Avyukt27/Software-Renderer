@@ -73,24 +73,16 @@ impl ApplicationHandler for App {
         self.window = Some(window);
         self.pixels = Some(pixels);
 
-        load_glb(Path::new("assets/objects/tiled_cube/tiled_cube.glb").to_path_buf());
+        let _ = load_glb(Path::new("assets/objects/tiled_cube/tiled_cube.glb").to_path_buf());
 
-        // self.meshes.push(Mesh::custom(
-        //     Path::new("assets/objects/pillow.obj"),
-        //     Vec3 {
-        //         x: 0.0,
-        //         y: -2.0,
-        //         z: 10.0,
-        //     },
-        // ));
-        // self.meshes.push(Mesh::custom(
-        //     Path::new("assets/objects/skull.obj"),
-        //     Vec3 {
-        //         x: 0.0,
-        //         y: 0.0,
-        //         z: 10.0,
-        //     },
-        // ));
+        self.meshes.push(Mesh::custom(
+            Path::new("assets/objects/pillow.obj"),
+            Vec3 {
+                x: 0.0,
+                y: -2.0,
+                z: 10.0,
+            },
+        ));
     }
 
     fn window_event(
