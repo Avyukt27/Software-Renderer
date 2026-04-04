@@ -10,8 +10,6 @@ pub struct Renderer {
     device: wgpu::Device,
     queue: wgpu::Queue,
     pipeline: wgpu::RenderPipeline,
-    vertex_buffer: wgpu::Buffer,
-    vertex_count: u32,
     surface: wgpu::Surface<'static>,
     surface_config: wgpu::SurfaceConfiguration,
     size: (u32, u32),
@@ -112,34 +110,11 @@ impl Renderer {
             cache: None,
         });
 
-        let vertices = vec![
-            Vertex {
-                position: [0.0, 0.5, 0.0],
-                colour: [1.0, 0.0, 0.0, 1.0],
-            },
-            Vertex {
-                position: [-0.5, -0.5, 0.0],
-                colour: [0.0, 1.0, 0.0, 1.0],
-            },
-            Vertex {
-                position: [0.5, -0.5, 0.0],
-                colour: [0.0, 0.0, 1.0, 1.0],
-            },
-        ];
-        let vertex_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
-            label: Some("Vertex Buffer"),
-            contents: bytemuck::cast_slice(&vertices),
-            usage: wgpu::BufferUsages::VERTEX,
-        });
-        let vertex_count = vertices.len() as u32;
-
         Renderer {
             window,
             device,
             queue,
             pipeline,
-            vertex_buffer,
-            vertex_count,
             surface,
             surface_config,
             size,
@@ -157,7 +132,7 @@ impl Renderer {
         self.surface.configure(&self.device, &self.surface_config);
     }
 
-    pub fn render(&mut self) {
+    pub fn render(&mut self, meshes: &[Mesh]) {
         let frame = match self.surface.get_current_texture() {
             wgpu::CurrentSurfaceTexture::Success(frame) => frame,
             wgpu::CurrentSurfaceTexture::Outdated | wgpu::CurrentSurfaceTexture::Suboptimal(_) => {
@@ -204,8 +179,12 @@ impl Renderer {
             });
 
             pass.set_pipeline(&self.pipeline);
-            pass.set_vertex_buffer(0, self.vertex_buffer.slice(..));
-            pass.draw(0..self.vertex_count, 0..1);
+
+            for mesh in meshes {
+                pass.set_vertex_buffer(0, mesh.vertex_buffer.slice(..));
+                pass.set_index_buffer(mesh.index_buffer.slice(..), wgpu::IndexFormat::Uint16);
+                pass.draw_indexed(0..mesh.index_count, 0, 0..1);
+            }
         }
 
         self.queue.submit(std::iter::once(encoder.finish()));

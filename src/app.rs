@@ -2,11 +2,12 @@ use std::sync::Arc;
 
 use winit::{application::ApplicationHandler, window::Window};
 
-use crate::renderer::Renderer;
+use crate::{mesh::Mesh, renderer::Renderer, vertex::Vertex};
 
 pub struct App {
     window: Option<Arc<Window>>,
     renderer: Option<Renderer>,
+    meshes: Vec<Mesh>,
 }
 
 impl App {
@@ -14,6 +15,7 @@ impl App {
         Self {
             window: None,
             renderer: None,
+            meshes: Vec::new(),
         }
     }
 }
@@ -30,6 +32,30 @@ impl ApplicationHandler for App {
         let renderer = pollster::block_on(Renderer::new(Arc::clone(&window)));
         self.window = Some(window);
         self.renderer = Some(renderer);
+
+        if let Some(renderer) = self.renderer.as_mut() {
+            self.meshes = vec![renderer.upload_mesh(
+                &[
+                    Vertex {
+                        position: [0.5, 0.5, 0.0],
+                        colour: [1.0, 0.0, 0.0, 1.0],
+                    },
+                    Vertex {
+                        position: [-0.5, 0.5, 0.0],
+                        colour: [1.0, 0.0, 0.0, 1.0],
+                    },
+                    Vertex {
+                        position: [-0.5, -0.5, 0.0],
+                        colour: [1.0, 0.0, 0.0, 1.0],
+                    },
+                    Vertex {
+                        position: [0.5, -0.5, 0.0],
+                        colour: [1.0, 0.0, 0.0, 1.0],
+                    },
+                ],
+                &[0, 1, 2, 0, 2, 3u16],
+            )];
+        }
     }
 
     fn window_event(
@@ -49,7 +75,7 @@ impl ApplicationHandler for App {
             }
             winit::event::WindowEvent::RedrawRequested => {
                 if let Some(renderer) = self.renderer.as_mut() {
-                    renderer.render();
+                    renderer.render(&self.meshes);
                 }
                 if let Some(window) = self.window.as_ref() {
                     window.request_redraw();
