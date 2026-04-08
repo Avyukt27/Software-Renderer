@@ -30,3 +30,17 @@ impl Camera {
         projection * view
     }
 }
+
+#[repr(C)]
+#[derive(Clone, Copy, bytemuck::Pod, bytemuck::Zeroable)]
+pub struct CameraUniform {
+    matrix: [[f32; 4]; 4],
+}
+
+impl CameraUniform {
+    pub fn from_camera(camera: &Camera) -> Self {
+        Self {
+            matrix: camera.view_proj().to_cols_array_2d(),
+        }
+    }
+}

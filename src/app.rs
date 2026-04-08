@@ -74,10 +74,15 @@ impl ApplicationHandler for App {
                 if let Some(renderer) = self.renderer.as_mut() {
                     renderer.resize((size.width, size.height));
                 }
+                if let Some(camera) = self.camera.as_mut() {
+                    camera.resize((size.width, size.height));
+                }
             }
             winit::event::WindowEvent::RedrawRequested => {
-                if let Some(renderer) = self.renderer.as_mut() {
-                    renderer.render(&self.meshes);
+                if let Some(renderer) = self.renderer.as_mut()
+                    && let Some(camera) = self.camera.as_ref()
+                {
+                    renderer.render(&self.meshes, camera);
                 }
                 if let Some(window) = self.window.as_ref() {
                     window.request_redraw();
