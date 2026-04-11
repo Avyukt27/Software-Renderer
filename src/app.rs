@@ -2,7 +2,7 @@ use std::sync::Arc;
 
 use winit::{application::ApplicationHandler, window::Window};
 
-use crate::{camera::Camera, mesh::Mesh, renderer::Renderer, vertex::Vertex};
+use crate::{camera::Camera, mesh::Mesh, renderer::Renderer, shapes::cube, vertex::Vertex};
 
 pub struct App {
     window: Option<Arc<Window>>,
@@ -35,28 +35,10 @@ impl ApplicationHandler for App {
         self.renderer = Some(renderer);
         self.camera = Some(Camera::new((size.width, size.height)));
 
+        let cube = cube();
+
         if let Some(renderer) = self.renderer.as_mut() {
-            self.meshes = vec![renderer.upload_mesh(
-                &[
-                    Vertex {
-                        position: [0.5, 0.5, 0.0],
-                        colour: [1.0, 0.0, 0.0, 1.0],
-                    },
-                    Vertex {
-                        position: [-0.5, 0.5, 0.0],
-                        colour: [1.0, 0.0, 0.0, 1.0],
-                    },
-                    Vertex {
-                        position: [-0.5, -0.5, 0.0],
-                        colour: [1.0, 0.0, 0.0, 1.0],
-                    },
-                    Vertex {
-                        position: [0.5, -0.5, 0.0],
-                        colour: [1.0, 0.0, 0.0, 1.0],
-                    },
-                ],
-                &[0, 1, 2, 0, 2, 3u16],
-            )];
+            self.meshes = vec![renderer.upload_mesh(&cube.0, &cube.1)];
         }
     }
 
