@@ -14,8 +14,8 @@ pub struct App {
     is_s_pressed: bool,
     is_a_pressed: bool,
     is_d_pressed: bool,
-    is_q_pressed: bool,
-    is_e_pressed: bool,
+    is_space_pressed: bool,
+    is_shift_pressed: bool,
 }
 
 impl App {
@@ -29,8 +29,8 @@ impl App {
             is_s_pressed: false,
             is_a_pressed: false,
             is_d_pressed: false,
-            is_q_pressed: false,
-            is_e_pressed: false,
+            is_space_pressed: false,
+            is_shift_pressed: false,
         }
     }
 }
@@ -40,6 +40,8 @@ impl ApplicationHandler for App {
         let window = event_loop
             .create_window(Window::default_attributes().with_title("Software Renderer [Window]"))
             .unwrap();
+        let _ = window.set_cursor_grab(winit::window::CursorGrabMode::Locked);
+        window.set_cursor_visible(false);
         let size = window.inner_size();
         let window = Arc::new(window);
 
@@ -78,33 +80,27 @@ impl ApplicationHandler for App {
                     && let Some(camera) = self.camera.as_mut()
                 {
                     let speed = 0.05_f32;
-                    let forward = (camera.target - camera.position).normalize();
+                    let forward = camera.get_forawrd();
                     let right = forward.cross(glam::Vec3::Y).normalize();
                     let up = right.cross(forward).normalize();
 
                     if self.is_w_pressed {
                         camera.position += forward * speed;
-                        camera.target += forward * speed;
                     }
                     if self.is_s_pressed {
                         camera.position -= forward * speed;
-                        camera.target -= forward * speed;
                     }
                     if self.is_a_pressed {
                         camera.position -= right * speed;
-                        camera.target -= right * speed;
                     }
                     if self.is_d_pressed {
                         camera.position += right * speed;
-                        camera.target += right * speed;
                     }
-                    if self.is_q_pressed {
+                    if self.is_space_pressed {
                         camera.position += up * speed;
-                        camera.target += up * speed;
                     }
-                    if self.is_e_pressed {
+                    if self.is_shift_pressed {
                         camera.position -= up * speed;
-                        camera.target -= up * speed;
                     }
 
                     renderer.render(&self.meshes, camera);
@@ -123,11 +119,33 @@ impl ApplicationHandler for App {
                 Key::Character(ref c) if c == "s" => self.is_s_pressed = state.is_pressed(),
                 Key::Character(ref c) if c == "a" => self.is_a_pressed = state.is_pressed(),
                 Key::Character(ref c) if c == "d" => self.is_d_pressed = state.is_pressed(),
-                Key::Character(ref c) if c == "q" => self.is_q_pressed = state.is_pressed(),
-                Key::Character(ref c) if c == "e" => self.is_e_pressed = state.is_pressed(),
+                Key::Named(winit::keyboard::NamedKey::Space) => {
+                    self.is_space_pressed = state.is_pressed()
+                }
+                Key::Named(winit::keyboard::NamedKey::Shift) => {
+                    self.is_shift_pressed = state.is_pressed()
+                }
                 _ => {}
             },
             _ => (),
+        }
+    }
+
+    fn device_event(
+        &mut self,
+        _event_loop: &winit::event_loop::ActiveEventLoop,
+        _device_id: winit::event::DeviceId,
+        event: winit::event::DeviceEvent,
+    ) {
+        if let winit::event::DeviceEvent::MouseMotion { delta } = event {
+            if let Some(camera) = self.camera.as_mut() {
+                let sensitivity = 0.002_f32;
+                camera.yaw += (delta.0 as f32) * sensitivity;
+                camera.pitch -= (delta.1 as f32) * sensitivity;
+                camera.pitch = camera
+                    .pitch
+                    .clamp(-89.0_f32.to_radians(), 89.0_f32.to_radians());
+            }
         }
     }
 }
