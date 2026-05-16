@@ -2,7 +2,7 @@ use std::sync::Arc;
 
 use winit::{application::ApplicationHandler, window::Window};
 
-use crate::{camera::Camera, mesh::Mesh, renderer::Renderer, shapes::cube, vertex::Vertex};
+use crate::{camera::Camera, mesh::Mesh, renderer::Renderer, shapes::cube};
 
 pub struct App {
     window: Option<Arc<Window>>,
