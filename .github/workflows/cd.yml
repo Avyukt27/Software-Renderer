@@ -30,8 +30,8 @@ jobs:
       - name: Package binary
         run: |
           mkdir -p release
-          cp target/${{ matrix.target }}/release/software-renderer release/software-renderer
-          zip -j release/software-renderer.zip release/software-renderer
+          cp target/${{ matrix.target }}/release/software-renderer release/software-renderer-${{ matrix.target }}
+          zip -j release/software-renderer-${{ matrix.target }}.zip release/software-renderer-${{ matrix.target }}
       - name: Create release with all artifacts
         uses: softprops/action-gh-release@v1
         with:
