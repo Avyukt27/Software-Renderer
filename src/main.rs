@@ -2,9 +2,9 @@ use winit::event_loop::EventLoop;
 
 mod app;
 mod camera;
+mod loaders;
 mod mesh;
 mod renderer;
-mod shapes;
 mod vertex;
 
 fn main() {
