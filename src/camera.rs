@@ -1,6 +1,6 @@
 pub struct Camera {
-    position: glam::Vec3,
-    target: glam::Vec3,
+    pub position: glam::Vec3,
+    pub target: glam::Vec3,
     fov: f32,
     aspect_ratio: f32,
     near: f32,
