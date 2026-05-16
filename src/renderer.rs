@@ -10,8 +10,8 @@ use crate::{
 };
 
 pub struct Renderer {
-    device: wgpu::Device,
-    queue: wgpu::Queue,
+    pub device: wgpu::Device,
+    pub queue: wgpu::Queue,
     pipeline: wgpu::RenderPipeline,
     surface: wgpu::Surface<'static>,
     surface_config: wgpu::SurfaceConfiguration,
@@ -19,6 +19,7 @@ pub struct Renderer {
     camera_bind_group: wgpu::BindGroup,
     depth_texture: wgpu::Texture,
     depth_texture_view: wgpu::TextureView,
+    pub texture_bind_group_layout: wgpu::BindGroupLayout,
     size: (u32, u32),
 }
 
@@ -85,6 +86,29 @@ impl Renderer {
         });
         let depth_texture_view = depth_texture.create_view(&wgpu::TextureViewDescriptor::default());
 
+        let texture_bind_group_layout =
+            device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
+                label: Some("Texture Bind Group Layout"),
+                entries: &[
+                    wgpu::BindGroupLayoutEntry {
+                        binding: 0,
+                        visibility: wgpu::ShaderStages::FRAGMENT,
+                        ty: wgpu::BindingType::Texture {
+                            multisampled: false,
+                            view_dimension: wgpu::TextureViewDimension::D2,
+                            sample_type: wgpu::TextureSampleType::Float { filterable: true },
+                        },
+                        count: None,
+                    },
+                    wgpu::BindGroupLayoutEntry {
+                        binding: 1,
+                        visibility: wgpu::ShaderStages::FRAGMENT,
+                        ty: wgpu::BindingType::Sampler(wgpu::SamplerBindingType::Filtering),
+                        count: None,
+                    },
+                ],
+            });
+
         let shader = device.create_shader_module(wgpu::ShaderModuleDescriptor {
             label: Some("Shader"),
             source: wgpu::ShaderSource::Wgsl(include_str!("shader.wgsl").into()),
@@ -104,14 +128,12 @@ impl Renderer {
                     count: None,
                 }],
             });
-
         let camera_buffer = device.create_buffer(&wgpu::BufferDescriptor {
             label: Some("Camera Buffer"),
             size: std::mem::size_of::<CameraUniform>() as u64,
             usage: wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST,
             mapped_at_creation: false,
         });
-
         let camera_bind_group = device.create_bind_group(&wgpu::BindGroupDescriptor {
             label: Some("Camera Bind Group"),
             layout: &camera_bind_group_layout,
@@ -123,7 +145,10 @@ impl Renderer {
 
         let pipeline_layout = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
             label: Some("Pipeline layout"),
-            bind_group_layouts: &[Some(&camera_bind_group_layout)],
+            bind_group_layouts: &[
+                Some(&camera_bind_group_layout),
+                Some(&texture_bind_group_layout),
+            ],
             immediate_size: 0,
         });
         let pipeline = device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
@@ -180,6 +205,7 @@ impl Renderer {
             camera_bind_group,
             depth_texture,
             depth_texture_view,
+            texture_bind_group_layout,
             size,
         }
     }
@@ -276,6 +302,7 @@ impl Renderer {
             pass.set_bind_group(0, &self.camera_bind_group, &[]);
 
             for mesh in meshes {
+                pass.set_bind_group(1, &mesh.texture_bind_group, &[]);
                 pass.set_vertex_buffer(0, mesh.vertex_buffer.slice(..));
                 pass.set_index_buffer(mesh.index_buffer.slice(..), wgpu::IndexFormat::Uint16);
                 pass.draw_indexed(0..mesh.index_count, 0, 0..1);
@@ -286,7 +313,12 @@ impl Renderer {
         frame.present();
     }
 
-    pub fn upload_mesh(&self, vertices: &[Vertex], indices: &[u16]) -> Mesh {
+    pub fn upload_mesh(
+        &self,
+        vertices: &[Vertex],
+        indices: &[u16],
+        texture_bind_group: wgpu::BindGroup,
+    ) -> Mesh {
         let vertex_buffer = self
             .device
             .create_buffer_init(&wgpu::util::BufferInitDescriptor {
@@ -307,6 +339,7 @@ impl Renderer {
             vertex_buffer,
             index_buffer,
             index_count: indices.len() as u32,
+            texture_bind_group,
         }
     }
 }

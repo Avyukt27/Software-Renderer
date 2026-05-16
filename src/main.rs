@@ -5,6 +5,7 @@ mod camera;
 mod loaders;
 mod mesh;
 mod renderer;
+mod texture;
 mod vertex;
 
 fn main() {

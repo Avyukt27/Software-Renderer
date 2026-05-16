@@ -50,10 +50,14 @@ impl ApplicationHandler for App {
         self.renderer = Some(renderer);
         self.camera = Some(Camera::new((size.width, size.height)));
 
-        let cube = load_obj("models/basic_cube/basic_cube.obj");
-
         if let Some(renderer) = self.renderer.as_mut() {
-            self.meshes = vec![renderer.upload_mesh(&cube.0, &cube.1)];
+            let cube = load_obj(
+                "models/basic_cube/basic_cube.obj",
+                &renderer.device,
+                &renderer.queue,
+                &renderer.texture_bind_group_layout,
+            );
+            self.meshes = vec![renderer.upload_mesh(&cube.0, &cube.1, cube.2)];
         }
     }
 

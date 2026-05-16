@@ -1,3 +1,4 @@
+use crate::texture::Texture;
 use crate::vertex::Vertex;
 use std::collections::HashMap;
 use std::fs::File;
@@ -11,6 +12,7 @@ pub struct Material {
     pub diffuse: [f32; 3],
     pub specular: [f32; 3],
     pub shininess: f32,
+    pub diffuse_map: Option<String>,
 }
 
 struct ObjIndex {
@@ -31,7 +33,7 @@ fn load_mtl(path: &Path) -> HashMap<String, Material> {
     };
 
     let reader = BufReader::new(file);
-    let mut current_mat: Option<Material> = None;
+    let mut current_material: Option<Material> = None;
 
     for line in reader.lines() {
         let line = line.expect("Failed to read MTL line");
@@ -42,20 +44,26 @@ fn load_mtl(path: &Path) -> HashMap<String, Material> {
 
         match tokens[0] {
             "newmtl" => {
-                if let Some(mat) = current_mat.take() {
+                if let Some(mat) = current_material.take() {
                     materials.insert(mat.name.clone(), mat);
                 }
-                current_mat = Some(Material {
+                current_material = Some(Material {
                     name: tokens[1].to_string(),
                     ambient: [1.0, 1.0, 1.0],
                     diffuse: [1.0, 1.0, 1.0],
                     specular: [0.0, 0.0, 0.0],
                     shininess: 32.0,
+                    diffuse_map: None,
                 });
             }
+            "map_Kd" => {
+                if let Some(ref mut material) = current_material {
+                    material.diffuse_map = Some(tokens[1].to_string());
+                }
+            }
             "Ka" => {
-                if let Some(ref mut mat) = current_mat {
-                    mat.ambient = [
+                if let Some(ref mut material) = current_material {
+                    material.ambient = [
                         tokens[1].parse().unwrap(),
                         tokens[2].parse().unwrap(),
                         tokens[3].parse().unwrap(),
@@ -63,8 +71,8 @@ fn load_mtl(path: &Path) -> HashMap<String, Material> {
                 }
             }
             "Kd" => {
-                if let Some(ref mut mat) = current_mat {
-                    mat.diffuse = [
+                if let Some(ref mut material) = current_material {
+                    material.diffuse = [
                         tokens[1].parse().unwrap(),
                         tokens[2].parse().unwrap(),
                         tokens[3].parse().unwrap(),
@@ -72,8 +80,8 @@ fn load_mtl(path: &Path) -> HashMap<String, Material> {
                 }
             }
             "Ks" => {
-                if let Some(ref mut mat) = current_mat {
-                    mat.specular = [
+                if let Some(ref mut material) = current_material {
+                    material.specular = [
                         tokens[1].parse().unwrap(),
                         tokens[2].parse().unwrap(),
                         tokens[3].parse().unwrap(),
@@ -81,22 +89,27 @@ fn load_mtl(path: &Path) -> HashMap<String, Material> {
                 }
             }
             "Ns" => {
-                if let Some(ref mut mat) = current_mat {
-                    mat.shininess = tokens[1].parse().unwrap();
+                if let Some(ref mut material) = current_material {
+                    material.shininess = tokens[1].parse().unwrap();
                 }
             }
             _ => {}
         }
     }
 
-    if let Some(mat) = current_mat {
-        materials.insert(mat.name.clone(), mat);
+    if let Some(material) = current_material {
+        materials.insert(material.name.clone(), material);
     }
 
     materials
 }
 
-pub fn load_obj(path_str: &str) -> (Vec<Vertex>, Vec<u16>) {
+pub fn load_obj(
+    path_str: &str,
+    device: &wgpu::Device,
+    queue: &wgpu::Queue,
+    layout: &wgpu::BindGroupLayout,
+) -> (Vec<Vertex>, Vec<u16>, wgpu::BindGroup) {
     let obj_path = Path::new(path_str);
     let base_dir = obj_path.parent().unwrap_or_else(|| Path::new("."));
 
@@ -198,5 +211,31 @@ pub fn load_obj(path_str: &str) -> (Vec<Vertex>, Vec<u16>) {
         }
     }
 
-    (out_vertices, out_indices)
+    let mut resolved_texture_path = None;
+    for material in materials.values() {
+        if let Some(ref texture_filename) = material.diffuse_map {
+            resolved_texture_path = Some(base_dir.join(texture_filename));
+            break;
+        }
+    }
+    let target_path =
+        resolved_texture_path.expect("Model material is missing a texture path declaration");
+    let loaded_texture = Texture::load(device, queue, target_path)
+        .expect("Failed to process asset texture bytes inside OBJ loader");
+    let texture_bind_group = device.create_bind_group(&wgpu::BindGroupDescriptor {
+        label: Some("OBJ Loader Generated Bind Group"),
+        layout,
+        entries: &[
+            wgpu::BindGroupEntry {
+                binding: 0,
+                resource: wgpu::BindingResource::TextureView(&loaded_texture.view),
+            },
+            wgpu::BindGroupEntry {
+                binding: 1,
+                resource: wgpu::BindingResource::Sampler(&loaded_texture.sampler),
+            },
+        ],
+    });
+
+    (out_vertices, out_indices, texture_bind_group)
 }
