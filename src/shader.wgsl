@@ -8,11 +8,13 @@ var<uniform> camera: CameraUniform;
 struct VertexInput {
   @location(0) position: vec3<f32>,
   @location(1) colour: vec4<f32>,
+  @location(2) uv: vec2<f32>,
 }
 
 struct VertexOutput {
   @builtin(position) clip_position: vec4<f32>,
   @location(0) colour: vec4<f32>,
+  @location(1) uv: vec2<f32>,
 }
 
 @vertex
@@ -20,10 +22,12 @@ fn vs_main(in: VertexInput) -> VertexOutput {
   var out: VertexOutput;
   out.clip_position = camera.matrix * vec4<f32>(in.position, 1.0);
   out.colour = in.colour;
+  out.uv = in.uv;
   return out;
 }
 
 @fragment
 fn fs_main(in: VertexOutput) -> @location(0) vec4<f32> {
-	return in.colour;
+  return vec4<f32>(in.uv, 0.0, 1.0);
+	// return in.colour;
 }
