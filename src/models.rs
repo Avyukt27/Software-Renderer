@@ -14,3 +14,8 @@ pub struct Mesh {
     pub index_count: u32,
     pub texture_bind_group: wgpu::BindGroup,
 }
+
+pub struct Model {
+    pub meshes: Vec<Mesh>,
+    pub materials: std::collections::HashMap<String, Material>,
+}

@@ -2,7 +2,7 @@ use std::sync::Arc;
 
 use winit::{application::ApplicationHandler, event::KeyEvent, keyboard::Key, window::Window};
 
-use crate::{camera::Camera, loaders::obj::load_obj, mesh::Mesh, renderer::Renderer};
+use crate::{camera::Camera, loaders::obj::load_obj, models::Mesh, renderer::Renderer};
 
 pub struct App {
     window: Option<Arc<Window>>,

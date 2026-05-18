@@ -3,7 +3,7 @@ use winit::event_loop::EventLoop;
 mod app;
 mod camera;
 mod loaders;
-mod mesh;
+mod models;
 mod renderer;
 mod texture;
 mod vertex;
