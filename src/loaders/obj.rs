@@ -1,6 +1,4 @@
-use wgpu::util::DeviceExt;
-
-use crate::models::{Material, Mesh, Model};
+use crate::models::{Mesh, Model};
 use crate::texture::Texture;
 use crate::vertex::Vertex;
 use std::collections::HashMap;
@@ -18,6 +16,7 @@ pub struct MtlMaterial {
     pub diffuse_map: Option<String>,
 }
 
+#[allow(dead_code)]
 struct ObjIndex {
     v_idx: usize,
     vt_idx: usize,
@@ -119,13 +118,80 @@ pub fn load_obj(
     let file = File::open(obj_path).expect("Failed to open OBJ file");
     let reader = BufReader::new(file);
 
-    let mut raw_positions = Vec::new();
-    let mut raw_normals = Vec::new();
-    let mut raw_uvs = Vec::new();
-    let mut faces = Vec::new();
-
+    let mut raw_positions: Vec<glam::Vec3> = Vec::new();
+    let mut raw_normals: Vec<glam::Vec3> = Vec::new();
+    let mut raw_uvs: Vec<glam::Vec2> = Vec::new();
     let mut raw_materials: HashMap<String, MtlMaterial> = HashMap::new();
+    let mut meshes = Vec::new();
     let mut current_material_name = String::from("Default");
+    let mut current_mesh_faces = Vec::new();
+
+    let bake_current_mesh = |mat_name: &str,
+                             faces: &Vec<ObjIndex>,
+                             raw_materials: &HashMap<String, MtlMaterial>,
+                             positions: &[glam::Vec3],
+                             uvs: &[glam::Vec2]|
+     -> Option<Mesh> {
+        if faces.is_empty() {
+            return None;
+        }
+
+        let mut out_vertices = Vec::new();
+        let mut out_indices = Vec::new();
+        let mut vertex_cache = HashMap::new();
+
+        for corner in faces {
+            let cache_key = (corner.v_idx, corner.vt_idx, corner.vn_idx);
+
+            if let Some(&existing_index) = vertex_cache.get(&cache_key) {
+                out_indices.push(existing_index);
+            } else {
+                let position = positions[corner.v_idx];
+                let uv = if corner.vt_idx < uvs.len() {
+                    uvs[corner.vt_idx].to_array()
+                } else {
+                    [0.0, 0.0]
+                };
+
+                let diffuse_color = if let Some(mat) = raw_materials.get(mat_name) {
+                    [mat.diffuse[0], mat.diffuse[1], mat.diffuse[2], 1.0]
+                } else {
+                    [1.0, 1.0, 1.0, 1.0]
+                };
+
+                let vertex = Vertex {
+                    position: position.to_array(),
+                    colour: diffuse_color,
+                    uv,
+                };
+
+                let new_index = out_vertices.len() as u16;
+                out_vertices.push(vertex);
+                out_indices.push(new_index);
+                vertex_cache.insert(cache_key, new_index);
+            }
+        }
+
+        use wgpu::util::DeviceExt;
+        let vertex_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
+            label: Some(&format!("Mesh Vertex Buffer: {}", mat_name)),
+            contents: bytemuck::cast_slice(&out_vertices),
+            usage: wgpu::BufferUsages::VERTEX,
+        });
+
+        let index_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
+            label: Some(&format!("Mesh Index Buffer: {}", mat_name)),
+            contents: bytemuck::cast_slice(&out_indices),
+            usage: wgpu::BufferUsages::INDEX,
+        });
+
+        Some(Mesh {
+            vertex_buffer,
+            index_buffer,
+            index_count: out_indices.len() as u32,
+            material_name: mat_name.to_string(),
+        })
+    };
 
     for line in reader.lines() {
         let line = line.expect("Failed to read line");
@@ -136,7 +202,19 @@ pub fn load_obj(
 
         match tokens[0] {
             "mtllib" => raw_materials.extend(load_mtl(&base_dir.join(tokens[1]))),
-            "usemtl" => current_material_name = tokens[1].to_string(),
+            "usemtl" => {
+                if let Some(baked_mesh) = bake_current_mesh(
+                    &current_material_name,
+                    &current_mesh_faces,
+                    &raw_materials,
+                    &raw_positions,
+                    &raw_uvs,
+                ) {
+                    meshes.push(baked_mesh);
+                }
+                current_mesh_faces.clear();
+                current_material_name = tokens[1].to_string();
+            }
             "v" => raw_positions.push(glam::Vec3::new(
                 tokens[1].parse().unwrap(),
                 tokens[2].parse().unwrap(),
@@ -154,12 +232,11 @@ pub fn load_obj(
             "f" => {
                 for i in 1..=3 {
                     let parts: Vec<&str> = tokens[i].split('/').collect();
-
                     let v_idx = parts[0].parse::<usize>().unwrap() - 1;
                     let vt_idx = parts[1].parse::<usize>().unwrap() - 1;
                     let vn_idx = parts[2].parse::<usize>().unwrap() - 1;
 
-                    faces.push(ObjIndex {
+                    current_mesh_faces.push(ObjIndex {
                         v_idx,
                         vt_idx,
                         vn_idx,
@@ -171,30 +248,42 @@ pub fn load_obj(
         }
     }
 
-    let mut compiled_materials: HashMap<String, Material> = HashMap::new();
+    if let Some(baked_mesh) = bake_current_mesh(
+        &current_material_name,
+        &current_mesh_faces,
+        &raw_materials,
+        &raw_positions,
+        &raw_uvs,
+    ) {
+        meshes.push(baked_mesh);
+    }
+
+    let mut compiled_materials = HashMap::new();
     let default_white =
         Texture::create_fallback(device, queue, [255, 255, 255, 255], "White Fallback");
     let default_black = Texture::create_fallback(device, queue, [0, 0, 0, 255], "Black Fallback");
-    for (material_name, raw_material) in raw_materials.iter() {
-        let diffuse_texture = match &raw_material.diffuse_map {
+
+    for (mat_name, raw_mat) in raw_materials.iter() {
+        let diffuse_texture = match &raw_mat.diffuse_map {
             Some(filename) => Texture::load(device, queue, base_dir.join(filename))
-                .expect("Failed to process diffuse map"),
+                .expect("Failed to process diffuse map texture bytes"),
             None => Texture::create_fallback(
                 device,
                 queue,
                 [255, 255, 255, 255],
-                &format!("{}_diffuse_fallback", material_name),
+                &format!("{}_diffuse_fallback", mat_name),
             ),
         };
+
         let specular_texture = Texture::create_fallback(
             device,
             queue,
             [0, 0, 0, 255],
-            &format!("{}_specular_fallback", material_name),
+            &format!("{}_specular_fallback", mat_name),
         );
 
         let bind_group = device.create_bind_group(&wgpu::BindGroupDescriptor {
-            label: Some(&format!("Bind Group for {}", material_name)),
+            label: Some(&format!("Bind Group for Material: {}", mat_name)),
             layout,
             entries: &[
                 wgpu::BindGroupEntry {
@@ -217,9 +306,9 @@ pub fn load_obj(
         });
 
         compiled_materials.insert(
-            material_name.clone(),
-            Material {
-                name: material_name.clone(),
+            mat_name.clone(),
+            crate::models::Material {
+                name: mat_name.clone(),
                 diffuse_texture,
                 specular_texture,
                 bind_group,
@@ -252,7 +341,7 @@ pub fn load_obj(
         });
         compiled_materials.insert(
             String::from("Default"),
-            Material {
+            crate::models::Material {
                 name: String::from("Default"),
                 diffuse_texture: default_white,
                 specular_texture: default_black,
@@ -261,73 +350,8 @@ pub fn load_obj(
         );
     }
 
-    let mut out_vertices = Vec::new();
-    let mut out_indices = Vec::new();
-    let mut vertex_cache = HashMap::new();
-
-    for corner in faces {
-        let cache_key = (
-            corner.v_idx,
-            corner.vt_idx,
-            corner.vn_idx,
-            corner.mat_name.clone(),
-        );
-
-        if let Some(&existing_index) = vertex_cache.get(&cache_key) {
-            out_indices.push(existing_index);
-        } else {
-            let position = raw_positions[corner.v_idx];
-
-            let uv = if corner.vt_idx < raw_uvs.len() {
-                raw_uvs[corner.vt_idx].to_array()
-            } else {
-                [0.0, 0.0]
-            };
-
-            let diffuse_color = if let Some(material) = raw_materials.get(&corner.mat_name) {
-                [
-                    material.diffuse[0],
-                    material.diffuse[1],
-                    material.diffuse[2],
-                    1.0,
-                ]
-            } else {
-                [1.0, 1.0, 1.0, 1.0]
-            };
-
-            let vertex = Vertex {
-                position: position.to_array(),
-                colour: diffuse_color,
-                uv,
-            };
-
-            let new_index = out_vertices.len() as u16;
-            out_vertices.push(vertex);
-            out_indices.push(new_index);
-            vertex_cache.insert(cache_key, new_index);
-        }
-    }
-
-    let vertex_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
-        label: Some("OBJ Vertex Buffer"),
-        contents: bytemuck::cast_slice(&out_vertices),
-        usage: wgpu::BufferUsages::VERTEX,
-    });
-    let index_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
-        label: Some("OBJ Index Buffer"),
-        contents: bytemuck::cast_slice(&out_indices),
-        usage: wgpu::BufferUsages::INDEX,
-    });
-
-    let mesh = Mesh {
-        vertex_buffer,
-        index_buffer,
-        index_count: out_indices.len() as u32,
-        material_name: current_material_name,
-    };
-
     Model {
-        meshes: vec![mesh],
+        meshes,
         materials: compiled_materials,
     }
 }

@@ -52,7 +52,7 @@ impl ApplicationHandler for App {
 
         if let Some(renderer) = self.renderer.as_mut() {
             let cube = load_obj(
-                "models/basic_cube/basic_cube.obj",
+                "models/two_textured_cube/two_textured_cube.obj",
                 &renderer.device,
                 &renderer.queue,
                 &renderer.texture_bind_group_layout,
