@@ -64,7 +64,7 @@ impl Texture {
         Ok(Self { view, sampler })
     }
 
-    pub fn create_colour_fallback(
+    pub fn create_fallback(
         device: &wgpu::Device,
         queue: &wgpu::Queue,
         colour: [u8; 4],

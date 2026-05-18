@@ -2,13 +2,13 @@ use std::sync::Arc;
 
 use winit::{application::ApplicationHandler, event::KeyEvent, keyboard::Key, window::Window};
 
-use crate::{camera::Camera, loaders::obj::load_obj, models::Mesh, renderer::Renderer};
+use crate::{camera::Camera, loaders::obj::load_obj, models::Model, renderer::Renderer};
 
 pub struct App {
     window: Option<Arc<Window>>,
     renderer: Option<Renderer>,
     camera: Option<Camera>,
-    meshes: Vec<Mesh>,
+    models: Vec<Model>,
 
     is_w_pressed: bool,
     is_s_pressed: bool,
@@ -24,7 +24,7 @@ impl App {
             window: None,
             renderer: None,
             camera: None,
-            meshes: Vec::new(),
+            models: Vec::new(),
             is_w_pressed: false,
             is_s_pressed: false,
             is_a_pressed: false,
@@ -57,7 +57,7 @@ impl ApplicationHandler for App {
                 &renderer.queue,
                 &renderer.texture_bind_group_layout,
             );
-            self.meshes = vec![renderer.upload_mesh(&cube.0, &cube.1, cube.2)];
+            self.models = vec![cube];
         }
     }
 
@@ -107,7 +107,7 @@ impl ApplicationHandler for App {
                         camera.position -= up * speed;
                     }
 
-                    renderer.render(&self.meshes, camera);
+                    renderer.render(&self.models, camera);
                 }
                 if let Some(window) = self.window.as_ref() {
                     window.request_redraw();

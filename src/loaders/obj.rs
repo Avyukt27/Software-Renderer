@@ -1,4 +1,6 @@
-use crate::models::Model;
+use wgpu::util::DeviceExt;
+
+use crate::models::{Material, Mesh, Model};
 use crate::texture::Texture;
 use crate::vertex::Vertex;
 use std::collections::HashMap;
@@ -7,7 +9,7 @@ use std::io::{BufRead, BufReader};
 use std::path::Path;
 
 #[derive(Debug, Clone)]
-pub struct Material {
+pub struct MtlMaterial {
     pub name: String,
     pub ambient: [f32; 3],
     pub diffuse: [f32; 3],
@@ -23,7 +25,7 @@ struct ObjIndex {
     mat_name: String,
 }
 
-fn load_mtl(path: &Path) -> HashMap<String, Material> {
+fn load_mtl(path: &Path) -> HashMap<String, MtlMaterial> {
     let mut materials = HashMap::new();
     let file = match File::open(path) {
         Ok(f) => f,
@@ -34,7 +36,7 @@ fn load_mtl(path: &Path) -> HashMap<String, Material> {
     };
 
     let reader = BufReader::new(file);
-    let mut current_material: Option<Material> = None;
+    let mut current_material: Option<MtlMaterial> = None;
 
     for line in reader.lines() {
         let line = line.expect("Failed to read MTL line");
@@ -48,7 +50,7 @@ fn load_mtl(path: &Path) -> HashMap<String, Material> {
                 if let Some(mat) = current_material.take() {
                     materials.insert(mat.name.clone(), mat);
                 }
-                current_material = Some(Material {
+                current_material = Some(MtlMaterial {
                     name: tokens[1].to_string(),
                     ambient: [1.0, 1.0, 1.0],
                     diffuse: [1.0, 1.0, 1.0],
@@ -122,7 +124,7 @@ pub fn load_obj(
     let mut raw_uvs = Vec::new();
     let mut faces = Vec::new();
 
-    let mut raw_materials: HashMap<String, Material> = HashMap::new();
+    let mut raw_materials: HashMap<String, MtlMaterial> = HashMap::new();
     let mut current_material_name = String::from("Default");
 
     for line in reader.lines() {
@@ -169,16 +171,98 @@ pub fn load_obj(
         }
     }
 
-    let mut compiled_materials = HashMap::new();
+    let mut compiled_materials: HashMap<String, Material> = HashMap::new();
+    let default_white =
+        Texture::create_fallback(device, queue, [255, 255, 255, 255], "White Fallback");
+    let default_black = Texture::create_fallback(device, queue, [0, 0, 0, 255], "Black Fallback");
     for (material_name, raw_material) in raw_materials.iter() {
-        let diffuse_texture = if let Some(filename) = raw_material.diffuse_map {
-            Texture::load(device, queue, base_dir.join(filename))
+        let diffuse_texture = match &raw_material.diffuse_map {
+            Some(filename) => Texture::load(device, queue, base_dir.join(filename))
+                .expect("Failed to process diffuse map"),
+            None => Texture::create_fallback(
+                device,
+                queue,
+                [255, 255, 255, 255],
+                &format!("{}_diffuse_fallback", material_name),
+            ),
         };
+        let specular_texture = Texture::create_fallback(
+            device,
+            queue,
+            [0, 0, 0, 255],
+            &format!("{}_specular_fallback", material_name),
+        );
+
+        let bind_group = device.create_bind_group(&wgpu::BindGroupDescriptor {
+            label: Some(&format!("Bind Group for {}", material_name)),
+            layout,
+            entries: &[
+                wgpu::BindGroupEntry {
+                    binding: 0,
+                    resource: wgpu::BindingResource::TextureView(&diffuse_texture.view),
+                },
+                wgpu::BindGroupEntry {
+                    binding: 1,
+                    resource: wgpu::BindingResource::Sampler(&diffuse_texture.sampler),
+                },
+                wgpu::BindGroupEntry {
+                    binding: 2,
+                    resource: wgpu::BindingResource::TextureView(&specular_texture.view),
+                },
+                wgpu::BindGroupEntry {
+                    binding: 3,
+                    resource: wgpu::BindingResource::Sampler(&specular_texture.sampler),
+                },
+            ],
+        });
+
+        compiled_materials.insert(
+            material_name.clone(),
+            Material {
+                name: material_name.clone(),
+                diffuse_texture,
+                specular_texture,
+                bind_group,
+            },
+        );
+    }
+
+    if compiled_materials.is_empty() {
+        let bind_group = device.create_bind_group(&wgpu::BindGroupDescriptor {
+            label: Some("Global Default Material Bind Group"),
+            layout,
+            entries: &[
+                wgpu::BindGroupEntry {
+                    binding: 0,
+                    resource: wgpu::BindingResource::TextureView(&default_white.view),
+                },
+                wgpu::BindGroupEntry {
+                    binding: 1,
+                    resource: wgpu::BindingResource::Sampler(&default_white.sampler),
+                },
+                wgpu::BindGroupEntry {
+                    binding: 2,
+                    resource: wgpu::BindingResource::TextureView(&default_black.view),
+                },
+                wgpu::BindGroupEntry {
+                    binding: 3,
+                    resource: wgpu::BindingResource::Sampler(&default_black.sampler),
+                },
+            ],
+        });
+        compiled_materials.insert(
+            String::from("Default"),
+            Material {
+                name: String::from("Default"),
+                diffuse_texture: default_white,
+                specular_texture: default_black,
+                bind_group,
+            },
+        );
     }
 
     let mut out_vertices = Vec::new();
     let mut out_indices = Vec::new();
-
     let mut vertex_cache = HashMap::new();
 
     for corner in faces {
@@ -200,8 +284,13 @@ pub fn load_obj(
                 [0.0, 0.0]
             };
 
-            let diffuse_color = if let Some(mat) = raw_materials.get(&corner.mat_name) {
-                [mat.diffuse[0], mat.diffuse[1], mat.diffuse[2], 1.0]
+            let diffuse_color = if let Some(material) = raw_materials.get(&corner.mat_name) {
+                [
+                    material.diffuse[0],
+                    material.diffuse[1],
+                    material.diffuse[2],
+                    1.0,
+                ]
             } else {
                 [1.0, 1.0, 1.0, 1.0]
             };
@@ -219,31 +308,26 @@ pub fn load_obj(
         }
     }
 
-    let mut resolved_texture_path = None;
-    for material in raw_materials.values() {
-        if let Some(ref texture_filename) = material.diffuse_map {
-            resolved_texture_path = Some(base_dir.join(texture_filename));
-            break;
-        }
-    }
-    let target_path =
-        resolved_texture_path.expect("Model material is missing a texture path declaration");
-    let loaded_texture = Texture::load(device, queue, target_path)
-        .expect("Failed to process asset texture bytes inside OBJ loader");
-    let texture_bind_group = device.create_bind_group(&wgpu::BindGroupDescriptor {
-        label: Some("OBJ Loader Generated Bind Group"),
-        layout,
-        entries: &[
-            wgpu::BindGroupEntry {
-                binding: 0,
-                resource: wgpu::BindingResource::TextureView(&loaded_texture.view),
-            },
-            wgpu::BindGroupEntry {
-                binding: 1,
-                resource: wgpu::BindingResource::Sampler(&loaded_texture.sampler),
-            },
-        ],
+    let vertex_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
+        label: Some("OBJ Vertex Buffer"),
+        contents: bytemuck::cast_slice(&out_vertices),
+        usage: wgpu::BufferUsages::VERTEX,
+    });
+    let index_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
+        label: Some("OBJ Index Buffer"),
+        contents: bytemuck::cast_slice(&out_indices),
+        usage: wgpu::BufferUsages::INDEX,
     });
 
-    (out_vertices, out_indices, texture_bind_group)
+    let mesh = Mesh {
+        vertex_buffer,
+        index_buffer,
+        index_count: out_indices.len() as u32,
+        material_name: current_material_name,
+    };
+
+    Model {
+        meshes: vec![mesh],
+        materials: compiled_materials,
+    }
 }

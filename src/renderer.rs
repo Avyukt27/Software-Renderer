@@ -1,11 +1,10 @@
 use std::sync::Arc;
 
-use wgpu::util::DeviceExt;
 use winit::window::Window;
 
 use crate::{
     camera::{Camera, CameraUniform},
-    models::Mesh,
+    models::Model,
     vertex::Vertex,
 };
 
@@ -254,7 +253,7 @@ impl Renderer {
             .create_view(&wgpu::TextureViewDescriptor::default());
     }
 
-    pub fn render(&mut self, meshes: &[Mesh], camera: &Camera) {
+    pub fn render(&mut self, models: &[Model], camera: &Camera) {
         let frame = match self.surface.get_current_texture() {
             wgpu::CurrentSurfaceTexture::Success(frame) => frame,
             wgpu::CurrentSurfaceTexture::Outdated | wgpu::CurrentSurfaceTexture::Suboptimal(_) => {
@@ -317,45 +316,24 @@ impl Renderer {
             pass.set_pipeline(&self.pipeline);
             pass.set_bind_group(0, &self.camera_bind_group, &[]);
 
-            for mesh in meshes {
-                pass.set_bind_group(1, &mesh.texture_bind_group, &[]);
-                pass.set_vertex_buffer(0, mesh.vertex_buffer.slice(..));
-                pass.set_index_buffer(mesh.index_buffer.slice(..), wgpu::IndexFormat::Uint16);
-                pass.draw_indexed(0..mesh.index_count, 0, 0..1);
+            for model in models {
+                for mesh in &model.meshes {
+                    if let Some(material) = model.materials.get(&mesh.material_name) {
+                        pass.set_bind_group(1, &material.bind_group, &[]);
+                    } else {
+                        println!(
+                            "Warning: Material '{}' not found, skipping bind group!",
+                            mesh.material_name
+                        );
+                    }
+                    pass.set_vertex_buffer(0, mesh.vertex_buffer.slice(..));
+                    pass.set_index_buffer(mesh.index_buffer.slice(..), wgpu::IndexFormat::Uint16);
+                    pass.draw_indexed(0..mesh.index_count, 0, 0..1);
+                }
             }
         }
 
         self.queue.submit(std::iter::once(encoder.finish()));
         frame.present();
-    }
-
-    pub fn upload_mesh(
-        &self,
-        vertices: &[Vertex],
-        indices: &[u16],
-        texture_bind_group: wgpu::BindGroup,
-    ) -> Mesh {
-        let vertex_buffer = self
-            .device
-            .create_buffer_init(&wgpu::util::BufferInitDescriptor {
-                label: Some("Vertex Buffer"),
-                contents: bytemuck::cast_slice(vertices),
-                usage: wgpu::BufferUsages::VERTEX,
-            });
-
-        let index_buffer = self
-            .device
-            .create_buffer_init(&wgpu::util::BufferInitDescriptor {
-                label: Some("Index Buffer"),
-                contents: bytemuck::cast_slice(indices),
-                usage: wgpu::BufferUsages::INDEX,
-            });
-
-        Mesh {
-            vertex_buffer,
-            index_buffer,
-            index_count: indices.len() as u32,
-            texture_bind_group,
-        }
     }
 }
