@@ -129,6 +129,9 @@ impl ApplicationHandler for App {
                 Key::Named(winit::keyboard::NamedKey::Shift) => {
                     self.is_shift_pressed = state.is_pressed()
                 }
+                Key::Named(winit::keyboard::NamedKey::Escape) => {
+                    event_loop.exit();
+                }
                 _ => {}
             },
             _ => (),
