@@ -1,3 +1,4 @@
+use crate::models::Model;
 use crate::texture::Texture;
 use crate::vertex::Vertex;
 use std::collections::HashMap;
@@ -109,7 +110,7 @@ pub fn load_obj(
     device: &wgpu::Device,
     queue: &wgpu::Queue,
     layout: &wgpu::BindGroupLayout,
-) -> (Vec<Vertex>, Vec<u16>, wgpu::BindGroup) {
+) -> Model {
     let obj_path = Path::new(path_str);
     let base_dir = obj_path.parent().unwrap_or_else(|| Path::new("."));
 
@@ -121,7 +122,7 @@ pub fn load_obj(
     let mut raw_uvs = Vec::new();
     let mut faces = Vec::new();
 
-    let mut materials: HashMap<String, Material> = HashMap::new();
+    let mut raw_materials: HashMap<String, Material> = HashMap::new();
     let mut current_material_name = String::from("Default");
 
     for line in reader.lines() {
@@ -132,7 +133,7 @@ pub fn load_obj(
         }
 
         match tokens[0] {
-            "mtllib" => materials.extend(load_mtl(&base_dir.join(tokens[1]))),
+            "mtllib" => raw_materials.extend(load_mtl(&base_dir.join(tokens[1]))),
             "usemtl" => current_material_name = tokens[1].to_string(),
             "v" => raw_positions.push(glam::Vec3::new(
                 tokens[1].parse().unwrap(),
@@ -168,6 +169,13 @@ pub fn load_obj(
         }
     }
 
+    let mut compiled_materials = HashMap::new();
+    for (material_name, raw_material) in raw_materials.iter() {
+        let diffuse_texture = if let Some(filename) = raw_material.diffuse_map {
+            Texture::load(device, queue, base_dir.join(filename))
+        };
+    }
+
     let mut out_vertices = Vec::new();
     let mut out_indices = Vec::new();
 
@@ -192,7 +200,7 @@ pub fn load_obj(
                 [0.0, 0.0]
             };
 
-            let diffuse_color = if let Some(mat) = materials.get(&corner.mat_name) {
+            let diffuse_color = if let Some(mat) = raw_materials.get(&corner.mat_name) {
                 [mat.diffuse[0], mat.diffuse[1], mat.diffuse[2], 1.0]
             } else {
                 [1.0, 1.0, 1.0, 1.0]
@@ -212,7 +220,7 @@ pub fn load_obj(
     }
 
     let mut resolved_texture_path = None;
-    for material in materials.values() {
+    for material in raw_materials.values() {
         if let Some(ref texture_filename) = material.diffuse_map {
             resolved_texture_path = Some(base_dir.join(texture_filename));
             break;
