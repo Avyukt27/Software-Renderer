@@ -30,6 +30,9 @@ jobs:
           cp target/${{ matrix.target }}/release/software_renderer release/software-renderer-${{ matrix.target }}
           zip -j release/software-renderer-${{ matrix.target }}.zip release/software-renderer-${{ matrix.target }}
       - name: Create release with all artifacts
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v3
         with:
           files: release/*.zip
+          prerelease: false
+          make_latest: true
+          draft: false

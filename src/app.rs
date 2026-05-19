@@ -2,13 +2,13 @@ use std::sync::Arc;
 
 use winit::{application::ApplicationHandler, event::KeyEvent, keyboard::Key, window::Window};
 
-use crate::{camera::Camera, mesh::Mesh, renderer::Renderer, shapes::cube};
+use crate::{camera::Camera, loaders::obj::load_obj, models::Model, renderer::Renderer};
 
 pub struct App {
     window: Option<Arc<Window>>,
     renderer: Option<Renderer>,
     camera: Option<Camera>,
-    meshes: Vec<Mesh>,
+    models: Vec<Model>,
 
     is_w_pressed: bool,
     is_s_pressed: bool,
@@ -24,7 +24,7 @@ impl App {
             window: None,
             renderer: None,
             camera: None,
-            meshes: Vec::new(),
+            models: Vec::new(),
             is_w_pressed: false,
             is_s_pressed: false,
             is_a_pressed: false,
@@ -50,10 +50,14 @@ impl ApplicationHandler for App {
         self.renderer = Some(renderer);
         self.camera = Some(Camera::new((size.width, size.height)));
 
-        let cube = cube();
-
         if let Some(renderer) = self.renderer.as_mut() {
-            self.meshes = vec![renderer.upload_mesh(&cube.0, &cube.1)];
+            let cube = load_obj(
+                "models/two_textured_cube/two_textured_cube.obj",
+                &renderer.device,
+                &renderer.queue,
+                &renderer.texture_bind_group_layout,
+            );
+            self.models = vec![cube];
         }
     }
 
@@ -103,7 +107,7 @@ impl ApplicationHandler for App {
                         camera.position -= up * speed;
                     }
 
-                    renderer.render(&self.meshes, camera);
+                    renderer.render(&self.models, camera);
                 }
                 if let Some(window) = self.window.as_ref() {
                     window.request_redraw();
@@ -124,6 +128,9 @@ impl ApplicationHandler for App {
                 }
                 Key::Named(winit::keyboard::NamedKey::Shift) => {
                     self.is_shift_pressed = state.is_pressed()
+                }
+                Key::Named(winit::keyboard::NamedKey::Escape) => {
+                    event_loop.exit();
                 }
                 _ => {}
             },
