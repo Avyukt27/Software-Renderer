@@ -130,7 +130,8 @@ pub fn load_obj(
                              faces: &Vec<ObjIndex>,
                              raw_materials: &HashMap<String, MtlMaterial>,
                              positions: &[glam::Vec3],
-                             uvs: &[glam::Vec2]|
+                             uvs: &[glam::Vec2],
+                             normals: &[glam::Vec3]|
      -> Option<Mesh> {
         if faces.is_empty() {
             return None;
@@ -152,17 +153,22 @@ pub fn load_obj(
                 } else {
                     [0.0, 0.0]
                 };
-
                 let diffuse_color = if let Some(mat) = raw_materials.get(mat_name) {
                     [mat.diffuse[0], mat.diffuse[1], mat.diffuse[2], 1.0]
                 } else {
                     [1.0, 1.0, 1.0, 1.0]
+                };
+                let normal = if corner.vn_idx < normals.len() {
+                    normals[corner.vn_idx].to_array()
+                } else {
+                    [0.0, 1.0, 0.0]
                 };
 
                 let vertex = Vertex {
                     position: position.to_array(),
                     colour: diffuse_color,
                     uv,
+                    normal,
                 };
 
                 let new_index = out_vertices.len() as u16;
@@ -209,6 +215,7 @@ pub fn load_obj(
                     &raw_materials,
                     &raw_positions,
                     &raw_uvs,
+                    &raw_normals,
                 ) {
                     meshes.push(baked_mesh);
                 }
@@ -254,6 +261,7 @@ pub fn load_obj(
         &raw_materials,
         &raw_positions,
         &raw_uvs,
+        &raw_normals,
     ) {
         meshes.push(baked_mesh);
     }
