@@ -5,6 +5,7 @@ mod camera;
 mod loaders;
 mod models;
 mod renderer;
+mod state;
 mod texture;
 mod vertex;
 

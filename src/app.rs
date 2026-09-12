@@ -1,141 +1,66 @@
 use std::sync::Arc;
 
-use winit::{application::ApplicationHandler, event::KeyEvent, keyboard::Key, window::Window};
+use winit::{
+    application::ApplicationHandler, dpi::PhysicalSize, event::WindowEvent, window::Window,
+};
 
-use crate::{camera::Camera, loaders::obj::load_obj, models::Model, renderer::Renderer};
+use crate::{renderer::Renderer, state::State};
 
 pub struct App {
-    window: Option<Arc<Window>>,
-    renderer: Option<Renderer>,
-    camera: Option<Camera>,
-    models: Vec<Model>,
-
-    is_w_pressed: bool,
-    is_s_pressed: bool,
-    is_a_pressed: bool,
-    is_d_pressed: bool,
-    is_space_pressed: bool,
-    is_shift_pressed: bool,
+    state: Option<State>,
 }
 
 impl App {
     pub fn new() -> Self {
-        Self {
-            window: None,
-            renderer: None,
-            camera: None,
-            models: Vec::new(),
-            is_w_pressed: false,
-            is_s_pressed: false,
-            is_a_pressed: false,
-            is_d_pressed: false,
-            is_space_pressed: false,
-            is_shift_pressed: false,
-        }
+        Self { state: None }
     }
 }
 
 impl ApplicationHandler for App {
     fn resumed(&mut self, event_loop: &winit::event_loop::ActiveEventLoop) {
-        let window = event_loop
-            .create_window(Window::default_attributes().with_title("Software Renderer [Window]"))
-            .unwrap();
+        let options = Window::default_attributes()
+            .with_title("Renderer")
+            .with_inner_size(PhysicalSize::new(800.0, 600.0))
+            .with_resizable(false);
+        let window = event_loop.create_window(options).unwrap();
         let _ = window.set_cursor_grab(winit::window::CursorGrabMode::Locked);
         window.set_cursor_visible(false);
-        let size = window.inner_size();
         let window = Arc::new(window);
-
         let renderer = pollster::block_on(Renderer::new(Arc::clone(&window)));
-        self.window = Some(window);
-        self.renderer = Some(renderer);
-        self.camera = Some(Camera::new((size.width, size.height)));
-
-        if let Some(renderer) = self.renderer.as_mut() {
-            let cube = load_obj(
-                "models/two_textured_cube/two_textured_cube.obj",
-                &renderer.device,
-                &renderer.queue,
-                &renderer.texture_bind_group_layout,
-            );
-            self.models = vec![cube];
-        }
+        self.state = Some(pollster::block_on(State::new(window, renderer)));
     }
 
     fn window_event(
         &mut self,
         event_loop: &winit::event_loop::ActiveEventLoop,
         _window_id: winit::window::WindowId,
-        event: winit::event::WindowEvent,
+        event: WindowEvent,
     ) {
-        match event {
-            winit::event::WindowEvent::CloseRequested => {
-                event_loop.exit();
-            }
-            winit::event::WindowEvent::Resized(size) => {
-                if let Some(renderer) = self.renderer.as_mut() {
-                    renderer.resize((size.width, size.height));
-                }
-                if let Some(camera) = self.camera.as_mut() {
-                    camera.resize((size.width, size.height));
-                }
-            }
-            winit::event::WindowEvent::RedrawRequested => {
-                if let Some(renderer) = self.renderer.as_mut()
-                    && let Some(camera) = self.camera.as_mut()
-                {
-                    let speed = 0.05_f32;
-                    let forward = camera.get_forawrd();
-                    let right = forward.cross(glam::Vec3::Y).normalize();
-                    let up = right.cross(forward).normalize();
-
-                    if self.is_w_pressed {
-                        camera.position += forward * speed;
-                    }
-                    if self.is_s_pressed {
-                        camera.position -= forward * speed;
-                    }
-                    if self.is_a_pressed {
-                        camera.position -= right * speed;
-                    }
-                    if self.is_d_pressed {
-                        camera.position += right * speed;
-                    }
-                    if self.is_space_pressed {
-                        camera.position += up * speed;
-                    }
-                    if self.is_shift_pressed {
-                        camera.position -= up * speed;
-                    }
-
-                    renderer.render(&self.models, camera);
-                }
-                if let Some(window) = self.window.as_ref() {
-                    window.request_redraw();
-                }
-            }
-            winit::event::WindowEvent::KeyboardInput {
-                event: KeyEvent {
-                    logical_key, state, ..
+        if let WindowEvent::CloseRequested = event {
+            self.state = None;
+            event_loop.exit();
+            return;
+        } else if let WindowEvent::KeyboardInput {
+            event:
+                winit::event::KeyEvent {
+                    physical_key:
+                        winit::keyboard::PhysicalKey::Code(winit::keyboard::KeyCode::Escape),
+                    state: winit::event::ElementState::Pressed,
+                    ..
                 },
-                ..
-            } => match logical_key {
-                Key::Character(ref c) if c == "w" => self.is_w_pressed = state.is_pressed(),
-                Key::Character(ref c) if c == "s" => self.is_s_pressed = state.is_pressed(),
-                Key::Character(ref c) if c == "a" => self.is_a_pressed = state.is_pressed(),
-                Key::Character(ref c) if c == "d" => self.is_d_pressed = state.is_pressed(),
-                Key::Named(winit::keyboard::NamedKey::Space) => {
-                    self.is_space_pressed = state.is_pressed()
-                }
-                Key::Named(winit::keyboard::NamedKey::Shift) => {
-                    self.is_shift_pressed = state.is_pressed()
-                }
-                Key::Named(winit::keyboard::NamedKey::Escape) => {
-                    event_loop.exit();
-                }
-                _ => {}
-            },
-            _ => (),
+            ..
+        } = event
+        {
+            self.state = None;
+            event_loop.exit();
+            return;
         }
+
+        let state = match &mut self.state {
+            Some(state) => state,
+            None => return,
+        };
+        state.handle_event(event);
     }
 
     fn device_event(
@@ -144,15 +69,14 @@ impl ApplicationHandler for App {
         _device_id: winit::event::DeviceId,
         event: winit::event::DeviceEvent,
     ) {
-        if let winit::event::DeviceEvent::MouseMotion { delta } = event {
-            if let Some(camera) = self.camera.as_mut() {
-                let sensitivity = 0.002_f32;
-                camera.yaw += (delta.0 as f32) * sensitivity;
-                camera.pitch -= (delta.1 as f32) * sensitivity;
-                camera.pitch = camera
-                    .pitch
-                    .clamp(-89.0_f32.to_radians(), 89.0_f32.to_radians());
-            }
+        if let Some(state) = &mut self.state {
+            state.handle_device_event(event);
+        }
+    }
+
+    fn about_to_wait(&mut self, _event_loop: &winit::event_loop::ActiveEventLoop) {
+        if let Some(state) = &mut self.state {
+            state.handle_key();
         }
     }
 }
