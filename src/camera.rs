@@ -1,7 +1,7 @@
 pub struct Camera {
-    pub position: glam::Vec3,
-    pub yaw: f32,
-    pub pitch: f32,
+    position: glam::Vec3,
+    yaw: f32,
+    pitch: f32,
     fov: f32,
     aspect_ratio: f32,
     near: f32,
@@ -40,6 +40,31 @@ impl Camera {
         let projection =
             glam::Mat4::perspective_rh(self.fov, self.aspect_ratio, self.near, self.far);
         projection * view
+    }
+
+    pub fn rotate_view(&mut self, delta: (f64, f64)) {
+        let sensitivity = 0.002_f32;
+        self.yaw += (delta.0 as f32) * sensitivity;
+        self.pitch -= (delta.1 as f32) * sensitivity;
+        self.pitch = self
+            .pitch
+            .clamp(-89.0_f32.to_radians(), 89.0_f32.to_radians());
+    }
+
+    pub fn move_forward(&mut self, speed: f32) {
+        let forward = self.get_forawrd();
+        self.position += forward * speed;
+    }
+    pub fn move_strafe(&mut self, speed: f32) {
+        let forward = self.get_forawrd();
+        let right = forward.cross(glam::Vec3::Y).normalize();
+        self.position += right * speed;
+    }
+    pub fn move_up(&mut self, speed: f32) {
+        let forward = self.get_forawrd();
+        let right = forward.cross(glam::Vec3::Y).normalize();
+        let up = right.cross(forward).normalize();
+        self.position += up * speed;
     }
 }
 

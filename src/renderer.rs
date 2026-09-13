@@ -13,7 +13,7 @@ pub struct Renderer {
     queue: wgpu::Queue,
     pipeline: wgpu::RenderPipeline,
     surface: wgpu::Surface<'static>,
-    surface_config: wgpu::SurfaceConfiguration,
+    config: wgpu::SurfaceConfiguration,
     camera_buffer: wgpu::Buffer,
     camera_bind_group: wgpu::BindGroup,
     depth_texture: wgpu::Texture,
@@ -43,6 +43,7 @@ impl Renderer {
                 power_preference: wgpu::PowerPreference::HighPerformance,
                 force_fallback_adapter: false,
                 compatible_surface: Some(&surface),
+                apply_limit_buckets: false,
             })
             .await
             .expect("Failed to find an adapter");
@@ -57,7 +58,7 @@ impl Renderer {
             .expect("Failed to create device");
 
         let surface_format = surface.get_capabilities(&adapter).formats[0];
-        let surface_config = wgpu::SurfaceConfiguration {
+        let config = wgpu::SurfaceConfiguration {
             usage: wgpu::TextureUsages::RENDER_ATTACHMENT,
             format: surface_format,
             width: size.0,
@@ -66,8 +67,9 @@ impl Renderer {
             alpha_mode: wgpu::CompositeAlphaMode::Auto,
             view_formats: vec![],
             desired_maximum_frame_latency: 2,
+            color_space: wgpu::SurfaceColorSpace::Auto,
         };
-        surface.configure(&device, &surface_config);
+        surface.configure(&device, &config);
 
         let depth_texture = device.create_texture(&wgpu::TextureDescriptor {
             label: Some("Depth Texture"),
@@ -172,7 +174,7 @@ impl Renderer {
             vertex: wgpu::VertexState {
                 module: &shader,
                 entry_point: Some("vs_main"),
-                buffers: &[Vertex::buffer_layout()],
+                buffers: &[Some(Vertex::buffer_layout())],
                 compilation_options: wgpu::PipelineCompilationOptions::default(),
             },
             primitive: wgpu::PrimitiveState {
@@ -201,7 +203,7 @@ impl Renderer {
                 entry_point: Some("fs_main"),
                 compilation_options: wgpu::PipelineCompilationOptions::default(),
                 targets: &[Some(wgpu::ColorTargetState {
-                    format: surface_config.format,
+                    format: config.format,
                     blend: Some(wgpu::BlendState::REPLACE),
                     write_mask: wgpu::ColorWrites::ALL,
                 })],
@@ -215,7 +217,7 @@ impl Renderer {
             queue,
             pipeline,
             surface,
-            surface_config,
+            config,
             camera_buffer,
             camera_bind_group,
             depth_texture,
@@ -231,9 +233,9 @@ impl Renderer {
         }
 
         self.size = new_size;
-        self.surface_config.width = new_size.0;
-        self.surface_config.height = new_size.1;
-        self.surface.configure(&self.device, &self.surface_config);
+        self.config.width = new_size.0;
+        self.config.height = new_size.1;
+        self.surface.configure(&self.device, &self.config);
         self.depth_texture = self.device.create_texture(&wgpu::TextureDescriptor {
             label: Some("Depth Texture"),
             size: wgpu::Extent3d {
@@ -253,17 +255,21 @@ impl Renderer {
             .create_view(&wgpu::TextureViewDescriptor::default());
     }
 
-    pub fn render(&mut self, models: &[Model], camera: &Camera) {
+    pub fn render(&mut self, models: &[Model], camera: &Camera) -> anyhow::Result<()> {
         let frame = match self.surface.get_current_texture() {
             wgpu::CurrentSurfaceTexture::Success(frame) => frame,
-            wgpu::CurrentSurfaceTexture::Outdated | wgpu::CurrentSurfaceTexture::Suboptimal(_) => {
-                self.surface.configure(&self.device, &self.surface_config);
-                return;
+            wgpu::CurrentSurfaceTexture::Suboptimal(surface_texture) => {
+                self.surface.configure(&self.device, &self.config);
+                surface_texture
             }
-            wgpu::CurrentSurfaceTexture::Lost
-            | wgpu::CurrentSurfaceTexture::Timeout
-            | wgpu::CurrentSurfaceTexture::Occluded => return,
-            wgpu::CurrentSurfaceTexture::Validation => return,
+            wgpu::CurrentSurfaceTexture::Timeout
+            | wgpu::CurrentSurfaceTexture::Occluded
+            | wgpu::CurrentSurfaceTexture::Validation => return Ok(()),
+            wgpu::CurrentSurfaceTexture::Outdated => {
+                self.surface.configure(&self.device, &self.config);
+                return Ok(());
+            }
+            wgpu::CurrentSurfaceTexture::Lost => anyhow::bail!("Lost device"),
         };
 
         let view = frame
@@ -334,7 +340,9 @@ impl Renderer {
         }
 
         self.queue.submit(std::iter::once(encoder.finish()));
-        frame.present();
+        self.queue.present(frame);
+
+        Ok(())
     }
 
     pub fn device(&self) -> &wgpu::Device {
