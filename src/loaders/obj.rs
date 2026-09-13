@@ -2,6 +2,7 @@ use crate::models::{Mesh, Model};
 use crate::texture::Texture;
 use crate::vertex::Vertex;
 use std::collections::HashMap;
+use std::fmt::Debug;
 use std::fs::File;
 use std::io::{BufRead, BufReader};
 use std::path::Path;
@@ -24,9 +25,9 @@ struct ObjIndex {
     mat_name: String,
 }
 
-fn load_mtl(path: &Path) -> HashMap<String, MtlMaterial> {
+fn load_mtl<P: AsRef<Path> + Debug>(path: P) -> HashMap<String, MtlMaterial> {
     let mut materials = HashMap::new();
-    let file = match File::open(path) {
+    let file = match File::open(&path) {
         Ok(f) => f,
         Err(_) => {
             println!("Warning: Could not find material file at {:?}", path);
@@ -106,16 +107,16 @@ fn load_mtl(path: &Path) -> HashMap<String, MtlMaterial> {
     materials
 }
 
-pub fn load_obj(
-    path_str: &str,
+pub fn load_obj<P: AsRef<Path>>(
+    path: P,
     device: &wgpu::Device,
     queue: &wgpu::Queue,
     layout: &wgpu::BindGroupLayout,
 ) -> Model {
-    let obj_path = Path::new(path_str);
-    let base_dir = obj_path.parent().unwrap_or_else(|| Path::new("."));
+    let path = path.as_ref();
+    let base_dir = path.parent().unwrap_or_else(|| Path::new("."));
 
-    let file = File::open(obj_path).expect("Failed to open OBJ file");
+    let file = File::open(path).expect("Failed to open OBJ file");
     let reader = BufReader::new(file);
 
     let mut raw_positions: Vec<glam::Vec3> = Vec::new();
