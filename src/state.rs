@@ -6,13 +6,16 @@ use winit::{
     window::Window,
 };
 
-use crate::{camera::Camera, loaders::obj::load_obj, models::Model, renderer::Renderer};
+use crate::{
+    camera::Camera, light::Light, loaders::obj::load_obj, models::Model, renderer::Renderer,
+};
 
 pub struct State {
     window: Arc<Window>,
     renderer: Renderer,
     camera: Camera,
     models: Vec<Model>,
+    light: Light,
 
     pressed_keys: HashSet<KeyCode>,
 }
@@ -34,13 +37,18 @@ impl State {
             renderer,
             camera: Camera::new((size.width, size.height)),
             models,
+            light: Light::new(glam::Vec3::new(5.0, 0.0, 0.0)),
             pressed_keys: HashSet::new(),
         }
     }
 
     fn render(&mut self) -> anyhow::Result<()> {
-        self.renderer.render(&self.models, &self.camera)?;
+        self.renderer
+            .render(&self.models, &self.camera, &self.light)?;
         self.window.request_redraw();
+
+        println!("{:?}", self.camera.position);
+
         Ok(())
     }
 

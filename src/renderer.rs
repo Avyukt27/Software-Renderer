@@ -4,6 +4,7 @@ use winit::window::Window;
 
 use crate::{
     camera::{Camera, CameraUniform},
+    light::{Light, LightUniform},
     models::Model,
     vertex::Vertex,
 };
@@ -14,11 +15,17 @@ pub struct Renderer {
     pipeline: wgpu::RenderPipeline,
     surface: wgpu::Surface<'static>,
     config: wgpu::SurfaceConfiguration,
+
     camera_buffer: wgpu::Buffer,
     camera_bind_group: wgpu::BindGroup,
+
+    light_buffer: wgpu::Buffer,
+    light_bind_group: wgpu::BindGroup,
+
     depth_texture: wgpu::Texture,
     depth_texture_view: wgpu::TextureView,
     texture_bind_group_layout: wgpu::BindGroupLayout,
+
     size: (u32, u32),
 }
 
@@ -160,10 +167,40 @@ impl Renderer {
             }],
         });
 
+        let light_bind_group_layout =
+            device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
+                label: Some("Light Bind Group Layout"),
+                entries: &[wgpu::BindGroupLayoutEntry {
+                    binding: 0,
+                    visibility: wgpu::ShaderStages::FRAGMENT,
+                    ty: wgpu::BindingType::Buffer {
+                        ty: wgpu::BufferBindingType::Uniform,
+                        has_dynamic_offset: false,
+                        min_binding_size: None,
+                    },
+                    count: None,
+                }],
+            });
+        let light_buffer = device.create_buffer(&wgpu::wgt::BufferDescriptor {
+            label: Some("Light Buffer"),
+            size: std::mem::size_of::<LightUniform>() as u64,
+            usage: wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST,
+            mapped_at_creation: false,
+        });
+        let light_bind_group = device.create_bind_group(&wgpu::BindGroupDescriptor {
+            label: Some("Light Bind Group"),
+            layout: &light_bind_group_layout,
+            entries: &[wgpu::BindGroupEntry {
+                binding: 0,
+                resource: light_buffer.as_entire_binding(),
+            }],
+        });
+
         let pipeline_layout = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
             label: Some("Pipeline layout"),
             bind_group_layouts: &[
                 Some(&camera_bind_group_layout),
+                Some(&light_bind_group_layout),
                 Some(&texture_bind_group_layout),
             ],
             immediate_size: 0,
@@ -220,6 +257,8 @@ impl Renderer {
             config,
             camera_buffer,
             camera_bind_group,
+            light_buffer,
+            light_bind_group,
             depth_texture,
             depth_texture_view,
             texture_bind_group_layout,
@@ -255,7 +294,12 @@ impl Renderer {
             .create_view(&wgpu::TextureViewDescriptor::default());
     }
 
-    pub fn render(&mut self, models: &[Model], camera: &Camera) -> anyhow::Result<()> {
+    pub fn render(
+        &mut self,
+        models: &[Model],
+        camera: &Camera,
+        light: &Light,
+    ) -> anyhow::Result<()> {
         let frame = match self.surface.get_current_texture() {
             wgpu::CurrentSurfaceTexture::Success(frame) => frame,
             wgpu::CurrentSurfaceTexture::Suboptimal(surface_texture) => {
@@ -282,11 +326,18 @@ impl Renderer {
                 label: Some("Render encoder"),
             });
 
-        let camera_uniform = CameraUniform::from_camera(camera);
+        let camera_uniform = camera.to_uniform();
         self.queue.write_buffer(
             &self.camera_buffer,
             0,
             bytemuck::cast_slice(&[camera_uniform]),
+        );
+
+        let light_uniform = light.to_uniform();
+        self.queue.write_buffer(
+            &self.light_buffer,
+            0,
+            bytemuck::cast_slice(&[light_uniform]),
         );
 
         {
@@ -321,11 +372,12 @@ impl Renderer {
 
             pass.set_pipeline(&self.pipeline);
             pass.set_bind_group(0, &self.camera_bind_group, &[]);
+            pass.set_bind_group(1, &self.light_bind_group, &[]);
 
             for model in models {
                 for mesh in &model.meshes {
                     if let Some(material) = model.materials.get(&mesh.material_name) {
-                        pass.set_bind_group(1, &material.bind_group, &[]);
+                        pass.set_bind_group(2, &material.bind_group, &[]);
                     } else {
                         println!(
                             "Warning: Material '{}' not found, skipping bind group!",

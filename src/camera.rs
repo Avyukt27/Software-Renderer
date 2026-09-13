@@ -1,5 +1,5 @@
 pub struct Camera {
-    position: glam::Vec3,
+    pub position: glam::Vec3,
     yaw: f32,
     pitch: f32,
     fov: f32,
@@ -66,18 +66,16 @@ impl Camera {
         let up = right.cross(forward).normalize();
         self.position += up * speed;
     }
+
+    pub fn to_uniform(&self) -> CameraUniform {
+        CameraUniform {
+            matrix: self.view_proj().to_cols_array_2d(),
+        }
+    }
 }
 
 #[repr(C)]
 #[derive(Clone, Copy, bytemuck::Pod, bytemuck::Zeroable)]
 pub struct CameraUniform {
     matrix: [[f32; 4]; 4],
-}
-
-impl CameraUniform {
-    pub fn from_camera(camera: &Camera) -> Self {
-        Self {
-            matrix: camera.view_proj().to_cols_array_2d(),
-        }
-    }
 }
