@@ -1,6 +1,6 @@
 # A GPU Renderer
 
-built in Rust
+Built in Rust using WGPU
 
 ### Features:
 - Basic Lighting

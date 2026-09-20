@@ -27,7 +27,7 @@ impl State {
         let size = window.inner_size();
 
         let cube = load_obj(
-            "models/basic_cube/basic_cube.obj",
+            "models/two_textured_cube/two_textured_cube.obj",
             renderer.device(),
             renderer.queue(),
             renderer.texture_bind_group_layout(),
