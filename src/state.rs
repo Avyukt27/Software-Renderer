@@ -32,12 +32,19 @@ impl State {
         );
         let models = vec![cube];
 
+        let light = Light::new(
+            glam::Vec3::new(5.0, 0.0, 0.0),
+            glam::Vec3::new(1.0, 1.0, 1.0),
+            glam::Vec3::new(0.5, 0.5, 0.5),
+            0.1,
+        );
+
         Self {
             window,
             renderer,
             camera: Camera::new((size.width, size.height)),
             models,
-            light: Light::new(glam::Vec3::new(5.0, 0.0, 0.0)),
+            light,
             pressed_keys: HashSet::new(),
         }
     }
@@ -46,8 +53,6 @@ impl State {
         self.renderer
             .render(&self.models, &self.camera, &self.light)?;
         self.window.request_redraw();
-
-        println!("{:?}", self.camera.position);
 
         Ok(())
     }

@@ -3,7 +3,13 @@ struct CameraUniform {
 }
 
 struct LightUniform {
-    position: vec3<f32>,
+    position: vec4<f32>,
+    diffuse: vec4<f32>,
+    ambient: vec4<f32>,
+    ambient_strength: f32,
+    _pad1: f32,
+    _pad2: f32,
+    _pad3: f32,
 }
 
 @group(0) @binding(0)
@@ -54,10 +60,8 @@ fn fs_main(in: VertexOutput) -> @location(0) vec4<f32> {
     let normal = normalize(in.normals);
     let light_dir = normalize(light.position.xyz - in.world_position);
 
-    let ambient_strength = 0.1;
-    let ambient = ambient_strength * vec3<f32>(1.0, 1.0, 1.0);
-
-    let diffuse = max(dot(normal, light_dir), 0.0) * vec3<f32>(1.0, 1.0, 1.0);
+    let ambient = light.ambient_strength * light.ambient.xyz;
+    let diffuse = max(dot(normal, light_dir), 0.0) * light.diffuse.xyz;
 
     let result = (ambient + diffuse) * texture_colour.rgb;
     return vec4<f32>(result, texture_colour.a);
