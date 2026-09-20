@@ -41,7 +41,7 @@ impl State {
         let objects = vec![
             Object {
                 model_index: 0,
-                position: glam::Vec3::new(-1.5, 0.0, 0.0),
+                position: glam::Vec3::new(-3.5, 0.0, 0.0),
                 rotation: glam::Vec3::ZERO,
                 scale: glam::Vec3::ONE,
             },
@@ -49,7 +49,7 @@ impl State {
                 model_index: 0,
                 position: glam::Vec3::new(1.5, 0.0, 0.0),
                 rotation: glam::Vec3::ZERO,
-                scale: glam::Vec3::splat(0.5),
+                scale: glam::Vec3::splat(0.1),
             },
         ];
 

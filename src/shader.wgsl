@@ -66,10 +66,14 @@ fn fs_main(in: VertexOutput) -> @location(0) vec4<f32> {
     let light_count = arrayLength(&lights);
     for (var i = 0u; i < light_count; i++) {
         let light = lights[i];
-        let light_dir = normalize(light.position - in.world_position);
+        let light_vector = light.position - in.world_position;
+        let light_dir = normalize(light_vector);
+        let dist = length(light_vector);
+
+        let attenuation = 1.0 / (1.0 + 0.1 * dist + 0.01 * (dist * dist));
 
         let ambient = light.ambient * light.ambient_strength;
-        let diffuse = max(dot(normal, light_dir), 0.0) * light.diffuse;
+        let diffuse = max(dot(normal, light_dir), 0.0) * light.diffuse * attenuation;
 
         total_ambient += ambient;
         total_diffuse += diffuse;
