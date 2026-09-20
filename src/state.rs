@@ -7,11 +7,7 @@ use winit::{
 };
 
 use crate::{
-    camera::Camera,
-    light::Light,
-    loaders::obj::load_obj,
-    models::{Model, ModelUniform},
-    renderer::Renderer,
+    camera::Camera, light::Light, loaders::obj::load_obj, models::Model, renderer::Renderer,
 };
 
 pub struct State {
@@ -30,7 +26,7 @@ impl State {
         let size = window.inner_size();
 
         let cube = load_obj(
-            "models/two_textured_cube/two_textured_cube.obj",
+            "models/basic_cube/basic_cube.obj",
             renderer.device(),
             renderer.queue(),
             renderer.texture_bind_group_layout(),
@@ -42,7 +38,7 @@ impl State {
         let light = Light::new(
             glam::Vec3::new(5.0, 0.0, 0.0),
             glam::Vec3::new(1.0, 1.0, 1.0),
-            glam::Vec3::new(0.5, 0.5, 0.5),
+            glam::Vec3::new(0.1, 0.1, 0.1),
             0.1,
         );
 

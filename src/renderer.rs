@@ -5,7 +5,7 @@ use winit::window::Window;
 use crate::{
     camera::{Camera, CameraUniform},
     light::{Light, LightUniform},
-    models::Model,
+    models::{Model, ModelUniform},
     vertex::Vertex,
 };
 
@@ -151,10 +151,10 @@ impl Renderer {
         let pipeline_layout = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
             label: Some("Pipeline layout"),
             bind_group_layouts: &[
+                Some(&texture_bind_group_layout),
                 Some(&camera_bind_group_layout),
                 Some(&light_bind_group_layout),
                 Some(&model_matrix_bind_group_layout),
-                Some(&texture_bind_group_layout),
             ],
             immediate_size: 0,
         });
@@ -283,17 +283,18 @@ impl Renderer {
             });
 
         let camera_uniform = camera.to_uniform();
-        self.queue.write_buffer(
-            &self.camera_buffer,
-            0,
-            bytemuck::cast_slice(&[camera_uniform]),
-        );
+        self.queue
+            .write_buffer(&self.camera_buffer, 0, bytemuck::bytes_of(&camera_uniform));
 
         let light_uniform = light.to_uniform();
+        self.queue
+            .write_buffer(&self.light_buffer, 0, bytemuck::bytes_of(&light_uniform));
+
+        let model_uniform = ModelUniform::from(model_matrix);
         self.queue.write_buffer(
-            &self.light_buffer,
+            &self.model_matrix_buffer,
             0,
-            bytemuck::cast_slice(&[light_uniform]),
+            bytemuck::bytes_of(&model_uniform),
         );
 
         {
@@ -327,13 +328,14 @@ impl Renderer {
             });
 
             pass.set_pipeline(&self.pipeline);
-            pass.set_bind_group(0, &self.camera_bind_group, &[]);
-            pass.set_bind_group(1, &self.light_bind_group, &[]);
+            pass.set_bind_group(1, &self.camera_bind_group, &[]);
+            pass.set_bind_group(2, &self.light_bind_group, &[]);
+            pass.set_bind_group(3, &self.model_matrix_bind_group, &[]);
 
             for model in models {
                 for mesh in &model.meshes {
                     if let Some(material) = model.materials.get(&mesh.material_name) {
-                        pass.set_bind_group(2, &material.bind_group, &[]);
+                        pass.set_bind_group(0, &material.bind_group, &[]);
                     } else {
                         println!(
                             "Warning: Material '{}' not found, skipping bind group!",

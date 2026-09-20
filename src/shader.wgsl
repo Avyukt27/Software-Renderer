@@ -12,19 +12,25 @@ struct LightUniform {
     _pad3: f32,
 }
 
-@group(0) @binding(0)
-var<uniform> camera: CameraUniform;
-@group(1) @binding(0)
-var<uniform> light: LightUniform;
+struct ModelUniform {
+    matrix: mat4x4<f32>,
+}
 
-@group(2) @binding(0)
+@group(0) @binding(0)
 var t_diffuse: texture_2d<f32>;
-@group(2) @binding(1)
+@group(0) @binding(1)
 var s_diffuse: sampler;
-@group(2) @binding(2)
+@group(0) @binding(2)
 var t_specular: texture_2d<f32>;
-@group(2) @binding(3)
+@group(0) @binding(3)
 var s_specular: sampler;
+
+@group(1) @binding(0)
+var<uniform> camera: CameraUniform;
+@group(2) @binding(0)
+var<uniform> light: LightUniform;
+@group(3) @binding(0)
+var<uniform> model: ModelUniform;
 
 struct VertexInput {
     @location(0) position: vec3<f32>,
@@ -44,11 +50,11 @@ struct VertexOutput {
 @vertex
 fn vs_main(in: VertexInput) -> VertexOutput {
     var out: VertexOutput;
-    out.clip_position = camera.matrix * vec4<f32>(in.position, 1.0);
+    out.clip_position = camera.matrix * model.matrix * vec4<f32>(in.position, 1.0);
     out.colour = in.colour;
     out.uv = in.uv;
-    out.normals = in.normals;
-    out.world_position = in.position;
+    out.normals = (model.matrix * vec4<f32>(in.normals, 0.0)).xyz;
+    out.world_position = (model.matrix * vec4<f32>(in.position, 1.0)).xyz;
     return out;
 }
 
