@@ -1,4 +1,4 @@
-use std::{collections::HashSet, sync::Arc};
+use std::{collections::HashSet, sync::Arc, time::Instant};
 
 use winit::{
     event::{DeviceEvent, WindowEvent},
@@ -19,6 +19,7 @@ pub struct State {
     light: Light,
 
     pressed_keys: HashSet<KeyCode>,
+    start_time: Instant,
 }
 
 impl State {
@@ -50,10 +51,16 @@ impl State {
             model_matrix,
             light,
             pressed_keys: HashSet::new(),
+            start_time: Instant::now(),
         }
     }
 
     fn render(&mut self) -> anyhow::Result<()> {
+        let elapsed_seconds = self.start_time.elapsed().as_secs_f32();
+        let rotation_speed = 1.0;
+        let rotation = glam::Mat4::from_rotation_y(elapsed_seconds * rotation_speed);
+        self.model_matrix = rotation;
+
         self.renderer
             .render(&self.models, &self.camera, &self.light, self.model_matrix)?;
         self.window.request_redraw();
