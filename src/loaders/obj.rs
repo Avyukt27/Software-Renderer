@@ -15,6 +15,7 @@ pub struct MtlMaterial {
     pub specular: [f32; 3],
     pub shininess: f32,
     pub diffuse_map: Option<String>,
+    pub rough_map: Option<String>,
 }
 
 #[allow(dead_code)]
@@ -57,11 +58,17 @@ fn load_mtl<P: AsRef<Path> + Debug>(path: P) -> HashMap<String, MtlMaterial> {
                     specular: [0.0, 0.0, 0.0],
                     shininess: 32.0,
                     diffuse_map: None,
+                    rough_map: None,
                 });
             }
             "map_Kd" => {
                 if let Some(ref mut material) = current_material {
                     material.diffuse_map = Some(tokens[1].to_string());
+                }
+            }
+            "map_Ns" => {
+                if let Some(ref mut material) = current_material {
+                    material.rough_map = Some(tokens[1].to_string());
                 }
             }
             "Ka" => {
@@ -268,9 +275,6 @@ pub fn load_obj<P: AsRef<Path>>(
     }
 
     let mut compiled_materials = HashMap::new();
-    let default_white =
-        Texture::create_fallback(device, queue, [255, 255, 255, 255], "White Fallback");
-    let default_black = Texture::create_fallback(device, queue, [0, 0, 0, 255], "Black Fallback");
 
     for (mat_name, raw_mat) in raw_materials.iter() {
         let diffuse_texture = match &raw_mat.diffuse_map {
@@ -279,17 +283,31 @@ pub fn load_obj<P: AsRef<Path>>(
             None => Texture::create_fallback(
                 device,
                 queue,
-                [255, 255, 255, 255],
+                [
+                    (raw_mat.diffuse[0] * 255.0).clamp(0.0, 255.0) as u8,
+                    (raw_mat.diffuse[1] * 255.0).clamp(0.0, 255.0) as u8,
+                    (raw_mat.diffuse[2] * 255.0).clamp(0.0, 255.0) as u8,
+                    255,
+                ],
                 &format!("{}_diffuse_fallback", mat_name),
             ),
         };
 
-        let specular_texture = Texture::create_fallback(
-            device,
-            queue,
-            [0, 0, 0, 255],
-            &format!("{}_specular_fallback", mat_name),
-        );
+        let specular_texture = match &raw_mat.rough_map {
+            Some(filename) => Texture::load(device, queue, base_dir.join(filename))
+                .expect("Failed to process diffuse map texture bytes"),
+            None => Texture::create_fallback(
+                device,
+                queue,
+                [
+                    (raw_mat.specular[0] * 255.0).clamp(0.0, 255.0) as u8,
+                    (raw_mat.specular[1] * 255.0).clamp(0.0, 255.0) as u8,
+                    (raw_mat.specular[2] * 255.0).clamp(0.0, 255.0) as u8,
+                    255,
+                ],
+                &format!("{}_specular_fallback", mat_name),
+            ),
+        };
 
         let bind_group = device.create_bind_group(&wgpu::BindGroupDescriptor {
             label: Some(&format!("Bind Group for Material: {}", mat_name)),
@@ -326,6 +344,11 @@ pub fn load_obj<P: AsRef<Path>>(
     }
 
     if compiled_materials.is_empty() {
+        let default_white =
+            Texture::create_fallback(device, queue, [255, 255, 255, 255], "White Fallback");
+        let default_black =
+            Texture::create_fallback(device, queue, [0, 0, 0, 255], "Black Fallback");
+
         let bind_group = device.create_bind_group(&wgpu::BindGroupDescriptor {
             label: Some("Global Default Material Bind Group"),
             layout,

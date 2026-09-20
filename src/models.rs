@@ -5,6 +5,7 @@ pub struct Material {
     pub name: String,
     pub diffuse_texture: Texture,
     pub specular_texture: Texture,
+    // TODO: Implement bump map
     // pub normal_texture: Texture,
     pub bind_group: wgpu::BindGroup,
 }
@@ -19,4 +20,37 @@ pub struct Mesh {
 pub struct Model {
     pub meshes: Vec<Mesh>,
     pub materials: std::collections::HashMap<String, Material>,
+}
+
+#[repr(C)]
+#[derive(Debug, Clone, Copy, bytemuck::Pod, bytemuck::Zeroable)]
+pub struct ModelUniform {
+    pub model_matrix: [[f32; 4]; 4],
+}
+
+impl Into<ModelUniform> for glam::Mat4 {
+    fn into(self) -> ModelUniform {
+        ModelUniform {
+            model_matrix: self.to_cols_array_2d(),
+        }
+    }
+}
+
+pub struct Object {
+    pub position: glam::Vec3,
+    pub rotation: glam::Vec3,
+    pub scale: glam::Vec3,
+    pub model_index: usize,
+}
+
+impl Object {
+    pub fn compute_matrix(&self) -> glam::Mat4 {
+        let translation = glam::Mat4::from_translation(self.position);
+        let rotation = glam::Mat4::from_rotation_x(self.rotation.x)
+            * glam::Mat4::from_rotation_y(self.rotation.y)
+            * glam::Mat4::from_rotation_z(self.rotation.z);
+        let scale = glam::Mat4::from_scale(self.scale);
+
+        translation * rotation * scale
+    }
 }

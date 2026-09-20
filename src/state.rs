@@ -1,4 +1,4 @@
-use std::{collections::HashSet, sync::Arc};
+use std::{collections::HashSet, sync::Arc, time::Instant};
 
 use winit::{
     event::{DeviceEvent, WindowEvent},
@@ -6,15 +6,24 @@ use winit::{
     window::Window,
 };
 
-use crate::{camera::Camera, loaders::obj::load_obj, models::Model, renderer::Renderer};
+use crate::{
+    camera::Camera,
+    light::Light,
+    loaders::obj::load_obj,
+    models::{Model, Object},
+    renderer::Renderer,
+};
 
 pub struct State {
     window: Arc<Window>,
     renderer: Renderer,
     camera: Camera,
     models: Vec<Model>,
+    objects: Vec<Object>,
+    lights: Vec<Light>,
 
     pressed_keys: HashSet<KeyCode>,
+    start_time: Instant,
 }
 
 impl State {
@@ -22,25 +31,85 @@ impl State {
         let size = window.inner_size();
 
         let cube = load_obj(
-            "models/two_textured_cube/two_textured_cube.obj",
+            "models/basic_cube/basic_cube.obj",
             renderer.device(),
             renderer.queue(),
             renderer.texture_bind_group_layout(),
         );
-        let models = vec![cube];
+        let sphere = load_obj(
+            "models/rusty_sphere/rusty_sphere.obj",
+            renderer.device(),
+            renderer.queue(),
+            renderer.texture_bind_group_layout(),
+        );
+        let monke = load_obj(
+            "models/metal_monke/metal_monke.obj",
+            renderer.device(),
+            renderer.queue(),
+            renderer.texture_bind_group_layout(),
+        );
+        let models = vec![cube, sphere, monke];
+
+        let objects = vec![
+            Object {
+                model_index: 0,
+                position: glam::Vec3::new(-3.5, 0.0, 0.0),
+                rotation: glam::Vec3::ZERO,
+                scale: glam::Vec3::ONE,
+            },
+            Object {
+                model_index: 1,
+                position: glam::Vec3::new(0.0, 0.0, 0.0),
+                rotation: glam::Vec3::ZERO,
+                scale: glam::Vec3::splat(0.75),
+            },
+            Object {
+                model_index: 2,
+                position: glam::Vec3 {
+                    x: 4.0,
+                    y: 0.5,
+                    z: 3.0,
+                },
+                rotation: glam::Vec3::ZERO,
+                scale: glam::Vec3::splat(0.02),
+            },
+        ];
+
+        let lights = vec![Light::new(
+            glam::Vec3::new(5.0, 0.0, 0.0),
+            glam::Vec3::new(1.0, 1.0, 1.0),
+            glam::Vec3::new(1.0, 1.0, 1.0),
+        )];
 
         Self {
             window,
             renderer,
             camera: Camera::new((size.width, size.height)),
             models,
+            objects,
+            lights,
             pressed_keys: HashSet::new(),
+            start_time: Instant::now(),
         }
     }
 
     fn render(&mut self) -> anyhow::Result<()> {
-        self.renderer.render(&self.models, &self.camera)?;
+        let elapsed = self.start_time.elapsed().as_secs_f32();
+        if let Some(obj1) = self.objects.get_mut(0) {
+            obj1.rotation.y = elapsed * 1.0;
+        }
+        if let Some(obj2) = self.objects.get_mut(1) {
+            obj2.rotation.y = elapsed * 0.5;
+        }
+        if let Some(obj3) = self.objects.get_mut(2) {
+            obj3.rotation.y = elapsed * 0.5;
+            obj3.rotation.z = elapsed * 1.5;
+        }
+
+        self.renderer
+            .render(&self.models, &self.objects, &self.camera, &self.lights)?;
         self.window.request_redraw();
+
         Ok(())
     }
 
