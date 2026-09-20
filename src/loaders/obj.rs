@@ -275,9 +275,6 @@ pub fn load_obj<P: AsRef<Path>>(
     }
 
     let mut compiled_materials = HashMap::new();
-    let default_white =
-        Texture::create_fallback(device, queue, [255, 255, 255, 255], "White Fallback");
-    let default_black = Texture::create_fallback(device, queue, [0, 0, 0, 255], "Black Fallback");
 
     for (mat_name, raw_mat) in raw_materials.iter() {
         let diffuse_texture = match &raw_mat.diffuse_map {
@@ -286,7 +283,12 @@ pub fn load_obj<P: AsRef<Path>>(
             None => Texture::create_fallback(
                 device,
                 queue,
-                [255, 255, 255, 255],
+                [
+                    (raw_mat.diffuse[0] * 255.0).clamp(0.0, 255.0) as u8,
+                    (raw_mat.diffuse[1] * 255.0).clamp(0.0, 255.0) as u8,
+                    (raw_mat.diffuse[2] * 255.0).clamp(0.0, 255.0) as u8,
+                    255,
+                ],
                 &format!("{}_diffuse_fallback", mat_name),
             ),
         };
@@ -297,8 +299,13 @@ pub fn load_obj<P: AsRef<Path>>(
             None => Texture::create_fallback(
                 device,
                 queue,
-                [0, 0, 0, 255],
-                &format!("{}_diffuse_fallback", mat_name),
+                [
+                    (raw_mat.specular[0] * 255.0).clamp(0.0, 255.0) as u8,
+                    (raw_mat.specular[1] * 255.0).clamp(0.0, 255.0) as u8,
+                    (raw_mat.specular[2] * 255.0).clamp(0.0, 255.0) as u8,
+                    255,
+                ],
+                &format!("{}_specular_fallback", mat_name),
             ),
         };
 
@@ -337,6 +344,11 @@ pub fn load_obj<P: AsRef<Path>>(
     }
 
     if compiled_materials.is_empty() {
+        let default_white =
+            Texture::create_fallback(device, queue, [255, 255, 255, 255], "White Fallback");
+        let default_black =
+            Texture::create_fallback(device, queue, [0, 0, 0, 255], "Black Fallback");
+
         let bind_group = device.create_bind_group(&wgpu::BindGroupDescriptor {
             label: Some("Global Default Material Bind Group"),
             layout,

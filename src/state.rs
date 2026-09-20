@@ -71,7 +71,7 @@ impl State {
                     z: 3.0,
                 },
                 rotation: glam::Vec3::ZERO,
-                scale: glam::Vec3::splat(0.2),
+                scale: glam::Vec3::splat(0.02),
             },
         ];
 
