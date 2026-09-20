@@ -1,5 +1,6 @@
 struct CameraUniform {
     matrix: mat4x4<f32>,
+    position: vec3<f32>,
 }
 
 struct LightUniform {
@@ -7,8 +8,8 @@ struct LightUniform {
     _pad1: f32,
     diffuse: vec3<f32>,
     _pad2: f32,
-    ambient: vec3<f32>,
-    ambient_strength: f32,
+    specular: vec3<f32>,
+    _pad3: f32,
 }
 
 struct ModelUniform {
@@ -56,12 +57,18 @@ fn vs_main(in: VertexInput, @builtin(instance_index) instance_index: u32) -> Ver
 @fragment
 fn fs_main(in: VertexOutput) -> @location(0) vec4<f32> {
     let texture_colour = textureSample(t_diffuse, s_diffuse, in.uv) * in.colour;
-    let specular_sample = textureSample(t_specular, s_specular, in.uv).r;
+    let roughness = textureSample(t_specular, s_specular, in.uv).r;
+
+    let smoothness = 1.0 - roughness;
+    let specular_strength = smoothness * smoothness;
+    let shininess = max(2.0, smoothness * 128.0);
 
     let normal = normalize(in.normals);
+    let view_dir = normalize(camera.position - in.world_position);
 
-    var total_ambient = vec3<f32>(0.0);
+    var total_ambient = vec3<f32>(0.1, 0.1, 0.1);
     var total_diffuse = vec3<f32>(0.0);
+    var total_specular = vec3<f32>(0.0);
 
     let light_count = arrayLength(&lights);
     for (var i = 0u; i < light_count; i++) {
@@ -72,13 +79,15 @@ fn fs_main(in: VertexOutput) -> @location(0) vec4<f32> {
 
         let attenuation = 1.0 / (1.0 + 0.1 * dist + 0.01 * (dist * dist));
 
-        let ambient = light.ambient * light.ambient_strength;
         let diffuse = max(dot(normal, light_dir), 0.0) * light.diffuse * attenuation;
+        let halfway_dir = normalize(light_dir + view_dir);
+        let spec = pow(max(dot(normal, halfway_dir), 0.0), shininess);
+        let specular = light.specular * spec * specular_strength * attenuation;
 
-        total_ambient += ambient;
         total_diffuse += diffuse;
+        total_specular += specular;
     }
 
-    let result = (total_ambient + total_diffuse) * texture_colour.rgb;
+    let result = (total_ambient + total_diffuse) * texture_colour.rgb + total_specular;
     return vec4<f32>(result, texture_colour.a);
 }

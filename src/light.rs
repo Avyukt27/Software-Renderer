@@ -1,22 +1,19 @@
 pub struct Light {
     position: glam::Vec3,
     diffuse_colour: glam::Vec3,
-    ambient_colour: glam::Vec3,
-    ambient_strength: f32,
+    specular_colour: glam::Vec3,
 }
 
 impl Light {
     pub fn new(
         position: glam::Vec3,
         diffuse_colour: glam::Vec3,
-        ambient_colour: glam::Vec3,
-        ambient_strength: f32,
+        specular_colour: glam::Vec3,
     ) -> Self {
         Self {
             position,
             diffuse_colour,
-            ambient_colour,
-            ambient_strength,
+            specular_colour,
         }
     }
 }
@@ -24,20 +21,12 @@ impl Light {
 impl Into<LightUniform> for &Light {
     fn into(self) -> LightUniform {
         LightUniform {
-            position: [self.position.x, self.position.y, self.position.z],
+            position: self.position.to_array(),
             _pad1: 0.0,
-            diffuse: [
-                self.diffuse_colour.x,
-                self.diffuse_colour.y,
-                self.diffuse_colour.z,
-            ],
+            diffuse: self.diffuse_colour.to_array(),
             _pad2: 0.0,
-            ambient: [
-                self.ambient_colour.x,
-                self.ambient_colour.y,
-                self.ambient_colour.z,
-            ],
-            ambient_strength: self.ambient_strength,
+            specular: self.specular_colour.to_array(),
+            _pad3: 0.0,
         }
     }
 }
@@ -49,6 +38,6 @@ pub struct LightUniform {
     _pad1: f32,
     pub diffuse: [f32; 3],
     _pad2: f32,
-    pub ambient: [f32; 3],
-    pub ambient_strength: f32,
+    pub specular: [f32; 3],
+    _pad3: f32,
 }

@@ -291,12 +291,16 @@ pub fn load_obj<P: AsRef<Path>>(
             ),
         };
 
-        let specular_texture = Texture::create_fallback(
-            device,
-            queue,
-            [0, 0, 0, 255],
-            &format!("{}_specular_fallback", mat_name),
-        );
+        let specular_texture = match &raw_mat.rough_map {
+            Some(filename) => Texture::load(device, queue, base_dir.join(filename))
+                .expect("Failed to process diffuse map texture bytes"),
+            None => Texture::create_fallback(
+                device,
+                queue,
+                [0, 0, 0, 255],
+                &format!("{}_diffuse_fallback", mat_name),
+            ),
+        };
 
         let bind_group = device.create_bind_group(&wgpu::BindGroupDescriptor {
             label: Some(&format!("Bind Group for Material: {}", mat_name)),

@@ -72,6 +72,8 @@ impl Into<CameraUniform> for &Camera {
     fn into(self) -> CameraUniform {
         CameraUniform {
             matrix: self.view_proj().to_cols_array_2d(),
+            position: self.position.to_array(),
+            _pad: 0.0,
         }
     }
 }
@@ -80,4 +82,6 @@ impl Into<CameraUniform> for &Camera {
 #[derive(Clone, Copy, bytemuck::Pod, bytemuck::Zeroable)]
 pub struct CameraUniform {
     matrix: [[f32; 4]; 4],
+    position: [f32; 3],
+    _pad: f32,
 }
