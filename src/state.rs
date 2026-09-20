@@ -7,7 +7,11 @@ use winit::{
 };
 
 use crate::{
-    camera::Camera, light::Light, loaders::obj::load_obj, models::Model, renderer::Renderer,
+    camera::Camera,
+    light::Light,
+    loaders::obj::load_obj,
+    models::{Model, ModelUniform},
+    renderer::Renderer,
 };
 
 pub struct State {
@@ -15,6 +19,7 @@ pub struct State {
     renderer: Renderer,
     camera: Camera,
     models: Vec<Model>,
+    model_matrix: glam::Mat4,
     light: Light,
 
     pressed_keys: HashSet<KeyCode>,
@@ -32,6 +37,8 @@ impl State {
         );
         let models = vec![cube];
 
+        let model_matrix = glam::Mat4::IDENTITY;
+
         let light = Light::new(
             glam::Vec3::new(5.0, 0.0, 0.0),
             glam::Vec3::new(1.0, 1.0, 1.0),
@@ -44,6 +51,7 @@ impl State {
             renderer,
             camera: Camera::new((size.width, size.height)),
             models,
+            model_matrix,
             light,
             pressed_keys: HashSet::new(),
         }
@@ -51,7 +59,7 @@ impl State {
 
     fn render(&mut self) -> anyhow::Result<()> {
         self.renderer
-            .render(&self.models, &self.camera, &self.light)?;
+            .render(&self.models, &self.camera, &self.light, self.model_matrix)?;
         self.window.request_redraw();
 
         Ok(())

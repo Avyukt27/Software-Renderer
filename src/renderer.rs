@@ -22,6 +22,9 @@ pub struct Renderer {
     light_buffer: wgpu::Buffer,
     light_bind_group: wgpu::BindGroup,
 
+    model_matrix_buffer: wgpu::Buffer,
+    model_matrix_bind_group: wgpu::BindGroup,
+
     depth_texture: wgpu::Texture,
     depth_texture_view: wgpu::TextureView,
     texture_bind_group_layout: wgpu::BindGroupLayout,
@@ -78,6 +81,11 @@ impl Renderer {
         };
         surface.configure(&device, &config);
 
+        let shader = device.create_shader_module(wgpu::ShaderModuleDescriptor {
+            label: Some("Shader"),
+            source: wgpu::ShaderSource::Wgsl(include_str!("shader.wgsl").into()),
+        });
+
         let depth_texture = device.create_texture(&wgpu::TextureDescriptor {
             label: Some("Depth Texture"),
             size: wgpu::Extent3d {
@@ -133,74 +141,19 @@ impl Renderer {
                 ],
             });
 
-        let shader = device.create_shader_module(wgpu::ShaderModuleDescriptor {
-            label: Some("Shader"),
-            source: wgpu::ShaderSource::Wgsl(include_str!("shader.wgsl").into()),
-        });
-
-        let camera_bind_group_layout =
-            device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
-                label: Some("Camera Bind Group Layout"),
-                entries: &[wgpu::BindGroupLayoutEntry {
-                    binding: 0,
-                    visibility: wgpu::ShaderStages::VERTEX,
-                    ty: wgpu::BindingType::Buffer {
-                        ty: wgpu::BufferBindingType::Uniform,
-                        has_dynamic_offset: false,
-                        min_binding_size: None,
-                    },
-                    count: None,
-                }],
-            });
-        let camera_buffer = device.create_buffer(&wgpu::BufferDescriptor {
-            label: Some("Camera Buffer"),
-            size: std::mem::size_of::<CameraUniform>() as u64,
-            usage: wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST,
-            mapped_at_creation: false,
-        });
-        let camera_bind_group = device.create_bind_group(&wgpu::BindGroupDescriptor {
-            label: Some("Camera Bind Group"),
-            layout: &camera_bind_group_layout,
-            entries: &[wgpu::BindGroupEntry {
-                binding: 0,
-                resource: camera_buffer.as_entire_binding(),
-            }],
-        });
-
-        let light_bind_group_layout =
-            device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
-                label: Some("Light Bind Group Layout"),
-                entries: &[wgpu::BindGroupLayoutEntry {
-                    binding: 0,
-                    visibility: wgpu::ShaderStages::FRAGMENT,
-                    ty: wgpu::BindingType::Buffer {
-                        ty: wgpu::BufferBindingType::Uniform,
-                        has_dynamic_offset: false,
-                        min_binding_size: None,
-                    },
-                    count: None,
-                }],
-            });
-        let light_buffer = device.create_buffer(&wgpu::wgt::BufferDescriptor {
-            label: Some("Light Buffer"),
-            size: std::mem::size_of::<LightUniform>() as u64,
-            usage: wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST,
-            mapped_at_creation: false,
-        });
-        let light_bind_group = device.create_bind_group(&wgpu::BindGroupDescriptor {
-            label: Some("Light Bind Group"),
-            layout: &light_bind_group_layout,
-            entries: &[wgpu::BindGroupEntry {
-                binding: 0,
-                resource: light_buffer.as_entire_binding(),
-            }],
-        });
+        let mut bind_groups = create_bind_groups(&device);
+        let (camera_bind_group_layout, camera_bind_group, camera_buffer) =
+            bind_groups.pop().unwrap();
+        let (light_bind_group_layout, light_bind_group, light_buffer) = bind_groups.pop().unwrap();
+        let (model_matrix_bind_group_layout, model_matrix_bind_group, model_matrix_buffer) =
+            bind_groups.pop().unwrap();
 
         let pipeline_layout = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
             label: Some("Pipeline layout"),
             bind_group_layouts: &[
                 Some(&camera_bind_group_layout),
                 Some(&light_bind_group_layout),
+                Some(&model_matrix_bind_group_layout),
                 Some(&texture_bind_group_layout),
             ],
             immediate_size: 0,
@@ -259,6 +212,8 @@ impl Renderer {
             camera_bind_group,
             light_buffer,
             light_bind_group,
+            model_matrix_buffer,
+            model_matrix_bind_group,
             depth_texture,
             depth_texture_view,
             texture_bind_group_layout,
@@ -299,6 +254,7 @@ impl Renderer {
         models: &[Model],
         camera: &Camera,
         light: &Light,
+        model_matrix: glam::Mat4,
     ) -> anyhow::Result<()> {
         let frame = match self.surface.get_current_texture() {
             wgpu::CurrentSurfaceTexture::Success(frame) => frame,
@@ -406,4 +362,105 @@ impl Renderer {
     pub fn texture_bind_group_layout(&self) -> &wgpu::BindGroupLayout {
         &self.texture_bind_group_layout
     }
+}
+
+fn create_bind_groups(
+    device: &wgpu::Device,
+) -> Vec<(wgpu::BindGroupLayout, wgpu::BindGroup, wgpu::Buffer)> {
+    let camera_bind_group_layout =
+        device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
+            label: Some("Camera Bind Group Layout"),
+            entries: &[wgpu::BindGroupLayoutEntry {
+                binding: 0,
+                visibility: wgpu::ShaderStages::VERTEX,
+                ty: wgpu::BindingType::Buffer {
+                    ty: wgpu::BufferBindingType::Uniform,
+                    has_dynamic_offset: false,
+                    min_binding_size: None,
+                },
+                count: None,
+            }],
+        });
+    let camera_buffer = device.create_buffer(&wgpu::BufferDescriptor {
+        label: Some("Camera Buffer"),
+        size: std::mem::size_of::<CameraUniform>() as u64,
+        usage: wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST,
+        mapped_at_creation: false,
+    });
+    let camera_bind_group = device.create_bind_group(&wgpu::BindGroupDescriptor {
+        label: Some("Camera Bind Group"),
+        layout: &camera_bind_group_layout,
+        entries: &[wgpu::BindGroupEntry {
+            binding: 0,
+            resource: camera_buffer.as_entire_binding(),
+        }],
+    });
+
+    let light_bind_group_layout =
+        device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
+            label: Some("Light Bind Group Layout"),
+            entries: &[wgpu::BindGroupLayoutEntry {
+                binding: 0,
+                visibility: wgpu::ShaderStages::FRAGMENT,
+                ty: wgpu::BindingType::Buffer {
+                    ty: wgpu::BufferBindingType::Uniform,
+                    has_dynamic_offset: false,
+                    min_binding_size: None,
+                },
+                count: None,
+            }],
+        });
+    let light_buffer = device.create_buffer(&wgpu::wgt::BufferDescriptor {
+        label: Some("Light Buffer"),
+        size: std::mem::size_of::<LightUniform>() as u64,
+        usage: wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST,
+        mapped_at_creation: false,
+    });
+    let light_bind_group = device.create_bind_group(&wgpu::BindGroupDescriptor {
+        label: Some("Light Bind Group"),
+        layout: &light_bind_group_layout,
+        entries: &[wgpu::BindGroupEntry {
+            binding: 0,
+            resource: light_buffer.as_entire_binding(),
+        }],
+    });
+
+    let model_matrix_bind_group_layout =
+        device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
+            label: Some("Model Matrix Bind Group Layout"),
+            entries: &[wgpu::BindGroupLayoutEntry {
+                binding: 0,
+                visibility: wgpu::ShaderStages::VERTEX,
+                ty: wgpu::BindingType::Buffer {
+                    ty: wgpu::BufferBindingType::Uniform,
+                    has_dynamic_offset: false,
+                    min_binding_size: None,
+                },
+                count: None,
+            }],
+        });
+    let model_matrix_buffer = device.create_buffer(&wgpu::BufferDescriptor {
+        label: Some("Model Matrix Buffer"),
+        size: std::mem::size_of::<CameraUniform>() as u64,
+        usage: wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST,
+        mapped_at_creation: false,
+    });
+    let model_matrix_bind_group = device.create_bind_group(&wgpu::BindGroupDescriptor {
+        label: Some("Model Matrix Bind Group"),
+        layout: &model_matrix_bind_group_layout,
+        entries: &[wgpu::BindGroupEntry {
+            binding: 0,
+            resource: model_matrix_buffer.as_entire_binding(),
+        }],
+    });
+
+    vec![
+        (camera_bind_group_layout, camera_bind_group, camera_buffer),
+        (light_bind_group_layout, light_bind_group, light_buffer),
+        (
+            model_matrix_bind_group_layout,
+            model_matrix_bind_group,
+            model_matrix_buffer,
+        ),
+    ]
 }

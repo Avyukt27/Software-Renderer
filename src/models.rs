@@ -20,3 +20,17 @@ pub struct Model {
     pub meshes: Vec<Mesh>,
     pub materials: std::collections::HashMap<String, Material>,
 }
+
+#[repr(C)]
+#[derive(Debug, Clone, Copy, bytemuck::Pod, bytemuck::Zeroable)]
+pub struct ModelUniform {
+    pub model_matrix: [[f32; 4]; 4],
+}
+
+impl From<glam::Mat4> for ModelUniform {
+    fn from(value: glam::Mat4) -> Self {
+        Self {
+            model_matrix: value.to_cols_array_2d(),
+        }
+    }
+}
