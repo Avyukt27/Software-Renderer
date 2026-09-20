@@ -5,7 +5,7 @@ use winit::window::Window;
 use crate::{
     camera::{Camera, CameraUniform},
     light::{Light, LightUniform},
-    models::{Model, ModelUniform},
+    models::{Model, ModelUniform, Object},
     vertex::Vertex,
 };
 
@@ -25,7 +25,9 @@ pub struct Renderer {
     light_bind_group_layout: wgpu::BindGroupLayout,
 
     model_matrix_buffer: wgpu::Buffer,
+    model_matrix_buffer_size: usize,
     model_matrix_bind_group: wgpu::BindGroup,
+    model_matrix_bind_group_layout: wgpu::BindGroupLayout,
 
     depth_texture: wgpu::Texture,
     depth_texture_view: wgpu::TextureView,
@@ -144,10 +146,10 @@ impl Renderer {
             });
 
         let mut bind_groups = create_bind_groups(&device);
-        let (camera_bind_group_layout, camera_bind_group, camera_buffer) =
+        let (model_matrix_bind_group_layout, model_matrix_bind_group, model_matrix_buffer) =
             bind_groups.pop().unwrap();
         let (light_bind_group_layout, light_bind_group, light_buffer) = bind_groups.pop().unwrap();
-        let (model_matrix_bind_group_layout, model_matrix_bind_group, model_matrix_buffer) =
+        let (camera_bind_group_layout, camera_bind_group, camera_buffer) =
             bind_groups.pop().unwrap();
 
         let pipeline_layout = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
@@ -217,7 +219,9 @@ impl Renderer {
             light_bind_group,
             light_bind_group_layout,
             model_matrix_buffer,
+            model_matrix_buffer_size: 1,
             model_matrix_bind_group,
+            model_matrix_bind_group_layout,
             depth_texture,
             depth_texture_view,
             texture_bind_group_layout,
@@ -256,9 +260,9 @@ impl Renderer {
     pub fn render(
         &mut self,
         models: &[Model],
+        objects: &[Object],
         camera: &Camera,
-        lights: &Vec<Light>,
-        model_matrix: glam::Mat4,
+        lights: &[Light],
     ) -> anyhow::Result<()> {
         let frame = match self.surface.get_current_texture() {
             wgpu::CurrentSurfaceTexture::Success(frame) => frame,
@@ -292,7 +296,6 @@ impl Renderer {
 
         let light_uniforms: Vec<LightUniform> = lights.iter().map(|l| l.into()).collect();
         let light_count = light_uniforms.len();
-
         if light_count > self.light_buffer_size {
             self.light_buffer_size = std::cmp::max(light_count, self.light_buffer_size * 2);
             let new_size = (std::mem::size_of::<LightUniform>() * self.light_buffer_size) as u64;
@@ -312,18 +315,43 @@ impl Renderer {
                 }],
             });
         }
-
         if light_count > 0 {
             self.queue
                 .write_buffer(&self.light_buffer, 0, bytemuck::cast_slice(&light_uniforms));
         }
 
-        let model_uniform = ModelUniform::from(model_matrix);
-        self.queue.write_buffer(
-            &self.model_matrix_buffer,
-            0,
-            bytemuck::bytes_of(&model_uniform),
-        );
+        let model_matrix_uniforms: Vec<ModelUniform> =
+            objects.iter().map(|o| o.compute_matrix().into()).collect();
+        let model_matrix_count = model_matrix_uniforms.len();
+        if model_matrix_count > self.model_matrix_buffer_size {
+            self.model_matrix_buffer_size =
+                std::cmp::max(model_matrix_count, self.model_matrix_buffer_size * 2);
+            let new_size =
+                (std::mem::size_of::<ModelUniform>() * self.model_matrix_buffer_size) as u64;
+
+            self.model_matrix_buffer = self.device.create_buffer(&wgpu::BufferDescriptor {
+                label: Some("Model Matrix Buffer"),
+                size: new_size,
+                usage: wgpu::BufferUsages::STORAGE | wgpu::BufferUsages::COPY_DST,
+                mapped_at_creation: false,
+            });
+            self.model_matrix_bind_group =
+                self.device.create_bind_group(&wgpu::BindGroupDescriptor {
+                    label: Some("Model Matrix Bind Group"),
+                    layout: &self.model_matrix_bind_group_layout,
+                    entries: &[wgpu::BindGroupEntry {
+                        binding: 0,
+                        resource: self.model_matrix_buffer.as_entire_binding(),
+                    }],
+                });
+        }
+        if model_matrix_count > 0 {
+            self.queue.write_buffer(
+                &self.model_matrix_buffer,
+                0,
+                bytemuck::cast_slice(&model_matrix_uniforms),
+            );
+        }
 
         {
             let mut pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
@@ -360,19 +388,21 @@ impl Renderer {
             pass.set_bind_group(2, &self.light_bind_group, &[]);
             pass.set_bind_group(3, &self.model_matrix_bind_group, &[]);
 
-            for model in models {
+            for (object_index, object) in objects.iter().enumerate() {
+                let model = &models[object.model_index];
+
                 for mesh in &model.meshes {
                     if let Some(material) = model.materials.get(&mesh.material_name) {
                         pass.set_bind_group(0, &material.bind_group, &[]);
-                    } else {
-                        println!(
-                            "Warning: Material '{}' not found, skipping bind group!",
-                            mesh.material_name
-                        );
                     }
                     pass.set_vertex_buffer(0, mesh.vertex_buffer.slice(..));
                     pass.set_index_buffer(mesh.index_buffer.slice(..), wgpu::IndexFormat::Uint16);
-                    pass.draw_indexed(0..mesh.index_count, 0, 0..1);
+
+                    pass.draw_indexed(
+                        0..mesh.index_count,
+                        0,
+                        object_index as u32..(object_index as u32 + 1),
+                    );
                 }
             }
         }
@@ -462,7 +492,7 @@ fn create_bind_groups(
                 binding: 0,
                 visibility: wgpu::ShaderStages::VERTEX,
                 ty: wgpu::BindingType::Buffer {
-                    ty: wgpu::BufferBindingType::Uniform,
+                    ty: wgpu::BufferBindingType::Storage { read_only: true },
                     has_dynamic_offset: false,
                     min_binding_size: None,
                 },
@@ -471,8 +501,8 @@ fn create_bind_groups(
         });
     let model_matrix_buffer = device.create_buffer(&wgpu::BufferDescriptor {
         label: Some("Model Matrix Buffer"),
-        size: std::mem::size_of::<CameraUniform>() as u64,
-        usage: wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST,
+        size: std::mem::size_of::<ModelUniform>() as u64,
+        usage: wgpu::BufferUsages::STORAGE | wgpu::BufferUsages::COPY_DST,
         mapped_at_creation: false,
     });
     let model_matrix_bind_group = device.create_bind_group(&wgpu::BindGroupDescriptor {

@@ -28,21 +28,19 @@ pub struct ModelUniform {
     pub model_matrix: [[f32; 4]; 4],
 }
 
-impl From<glam::Mat4> for ModelUniform {
-    fn from(value: glam::Mat4) -> Self {
-        Self {
-            model_matrix: value.to_cols_array_2d(),
+impl Into<ModelUniform> for glam::Mat4 {
+    fn into(self) -> ModelUniform {
+        ModelUniform {
+            model_matrix: self.to_cols_array_2d(),
         }
     }
 }
 
 pub struct Object {
-    pub model: Model,
     pub position: glam::Vec3,
     pub rotation: glam::Vec3,
     pub scale: glam::Vec3,
-    pub model_buffer: wgpu::Buffer,
-    pub model_bind_group: wgpu::BindGroup,
+    pub model_index: usize,
 }
 
 impl Object {

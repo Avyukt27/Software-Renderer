@@ -22,7 +22,7 @@ struct ModelUniform {
 
 @group(1) @binding(0) var<uniform> camera: CameraUniform;
 @group(2) @binding(0) var<storage, read> lights: array<LightUniform>;
-@group(3) @binding(0) var<uniform> model: ModelUniform;
+@group(3) @binding(0) var<storage, read> models: array<ModelUniform>;
 
 struct VertexInput {
     @location(0) position: vec3<f32>,
@@ -40,13 +40,16 @@ struct VertexOutput {
 }
 
 @vertex
-fn vs_main(in: VertexInput) -> VertexOutput {
+fn vs_main(in: VertexInput, @builtin(instance_index) instance_index: u32) -> VertexOutput {
     var out: VertexOutput;
-    out.clip_position = camera.matrix * model.matrix * vec4<f32>(in.position, 1.0);
+
+    let model_matrix = models[instance_index].matrix;
+
+    out.clip_position = camera.matrix * model_matrix * vec4<f32>(in.position, 1.0);
     out.colour = in.colour;
     out.uv = in.uv;
-    out.normals = (model.matrix * vec4<f32>(in.normals, 0.0)).xyz;
-    out.world_position = (model.matrix * vec4<f32>(in.position, 1.0)).xyz;
+    out.normals = (model_matrix * vec4<f32>(in.normals, 0.0)).xyz;
+    out.world_position = (model_matrix * vec4<f32>(in.position, 1.0)).xyz;
     return out;
 }
 
