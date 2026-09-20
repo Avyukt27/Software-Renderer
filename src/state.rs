@@ -30,13 +30,25 @@ impl State {
     pub async fn new(window: Arc<Window>, renderer: Renderer) -> Self {
         let size = window.inner_size();
 
+        let cube = load_obj(
+            "models/basic_cube/basic_cube.obj",
+            renderer.device(),
+            renderer.queue(),
+            renderer.texture_bind_group_layout(),
+        );
         let sphere = load_obj(
             "models/rusty_sphere/rusty_sphere.obj",
             renderer.device(),
             renderer.queue(),
             renderer.texture_bind_group_layout(),
         );
-        let models = vec![sphere];
+        let monke = load_obj(
+            "models/metal_monke/metal_monke.obj",
+            renderer.device(),
+            renderer.queue(),
+            renderer.texture_bind_group_layout(),
+        );
+        let models = vec![cube, sphere, monke];
 
         let objects = vec![
             Object {
@@ -46,10 +58,20 @@ impl State {
                 scale: glam::Vec3::ONE,
             },
             Object {
-                model_index: 0,
+                model_index: 1,
                 position: glam::Vec3::new(0.0, 0.0, 0.0),
                 rotation: glam::Vec3::ZERO,
                 scale: glam::Vec3::splat(0.75),
+            },
+            Object {
+                model_index: 2,
+                position: glam::Vec3 {
+                    x: 4.0,
+                    y: 0.5,
+                    z: 3.0,
+                },
+                rotation: glam::Vec3::ZERO,
+                scale: glam::Vec3::splat(0.2),
             },
         ];
 
@@ -78,6 +100,10 @@ impl State {
         }
         if let Some(obj2) = self.objects.get_mut(1) {
             obj2.rotation.y = elapsed * 0.5;
+        }
+        if let Some(obj3) = self.objects.get_mut(2) {
+            obj3.rotation.y = elapsed * 0.5;
+            obj3.rotation.z = elapsed * 1.5;
         }
 
         self.renderer
