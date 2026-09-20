@@ -66,8 +66,10 @@ impl Camera {
         let up = right.cross(forward).normalize();
         self.position += up * speed;
     }
+}
 
-    pub fn to_uniform(&self) -> CameraUniform {
+impl Into<CameraUniform> for &Camera {
+    fn into(self) -> CameraUniform {
         CameraUniform {
             matrix: self.view_proj().to_cols_array_2d(),
         }

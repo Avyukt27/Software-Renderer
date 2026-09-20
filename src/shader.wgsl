@@ -3,34 +3,26 @@ struct CameraUniform {
 }
 
 struct LightUniform {
-    position: vec4<f32>,
-    diffuse: vec4<f32>,
-    ambient: vec4<f32>,
-    ambient_strength: f32,
+    position: vec3<f32>,
     _pad1: f32,
+    diffuse: vec3<f32>,
     _pad2: f32,
-    _pad3: f32,
+    ambient: vec3<f32>,
+    ambient_strength: f32,
 }
 
 struct ModelUniform {
     matrix: mat4x4<f32>,
 }
 
-@group(0) @binding(0)
-var t_diffuse: texture_2d<f32>;
-@group(0) @binding(1)
-var s_diffuse: sampler;
-@group(0) @binding(2)
-var t_specular: texture_2d<f32>;
-@group(0) @binding(3)
-var s_specular: sampler;
+@group(0) @binding(0) var t_diffuse: texture_2d<f32>;
+@group(0) @binding(1) var s_diffuse: sampler;
+@group(0) @binding(2) var t_specular: texture_2d<f32>;
+@group(0) @binding(3) var s_specular: sampler;
 
-@group(1) @binding(0)
-var<uniform> camera: CameraUniform;
-@group(2) @binding(0)
-var<uniform> light: LightUniform;
-@group(3) @binding(0)
-var<uniform> model: ModelUniform;
+@group(1) @binding(0) var<uniform> camera: CameraUniform;
+@group(2) @binding(0) var<storage, read> lights: array<LightUniform>;
+@group(3) @binding(0) var<uniform> model: ModelUniform;
 
 struct VertexInput {
     @location(0) position: vec3<f32>,
@@ -64,11 +56,22 @@ fn fs_main(in: VertexOutput) -> @location(0) vec4<f32> {
     let specular_sample = textureSample(t_specular, s_specular, in.uv).r;
 
     let normal = normalize(in.normals);
-    let light_dir = normalize(light.position.xyz - in.world_position);
 
-    let ambient = light.ambient_strength * light.ambient.xyz;
-    let diffuse = max(dot(normal, light_dir), 0.0) * light.diffuse.xyz;
+    var total_ambient = vec3<f32>(0.0);
+    var total_diffuse = vec3<f32>(0.0);
 
-    let result = (ambient + diffuse) * texture_colour.rgb;
+    let light_count = arrayLength(&lights);
+    for (var i = 0u; i < light_count; i++) {
+        let light = lights[i];
+        let light_dir = normalize(light.position - in.world_position);
+
+        let ambient = light.ambient * light.ambient_strength;
+        let diffuse = max(dot(normal, light_dir), 0.0) * light.diffuse;
+
+        total_ambient += ambient;
+        total_diffuse += diffuse;
+    }
+
+    let result = (total_ambient + total_diffuse) * texture_colour.rgb;
     return vec4<f32>(result, texture_colour.a);
 }

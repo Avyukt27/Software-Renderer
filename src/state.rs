@@ -16,7 +16,7 @@ pub struct State {
     camera: Camera,
     models: Vec<Model>,
     model_matrix: glam::Mat4,
-    light: Light,
+    lights: Vec<Light>,
 
     pressed_keys: HashSet<KeyCode>,
     start_time: Instant,
@@ -36,12 +36,20 @@ impl State {
 
         let model_matrix = glam::Mat4::IDENTITY;
 
-        let light = Light::new(
-            glam::Vec3::new(5.0, 0.0, 0.0),
-            glam::Vec3::new(1.0, 1.0, 1.0),
-            glam::Vec3::new(0.1, 0.1, 0.1),
-            0.1,
-        );
+        let lights = vec![
+            Light::new(
+                glam::Vec3::new(0.0, 0.0, 5.0),
+                glam::Vec3::new(1.0, 1.0, 1.0),
+                glam::Vec3::new(0.1, 0.1, 0.1),
+                0.1,
+            ),
+            Light::new(
+                glam::Vec3::new(0.0, 0.0, -5.0),
+                glam::Vec3::new(1.0, 1.0, 1.0),
+                glam::Vec3::new(0.1, 0.1, 0.1),
+                0.1,
+            ),
+        ];
 
         Self {
             window,
@@ -49,7 +57,7 @@ impl State {
             camera: Camera::new((size.width, size.height)),
             models,
             model_matrix,
-            light,
+            lights,
             pressed_keys: HashSet::new(),
             start_time: Instant::now(),
         }
@@ -62,7 +70,7 @@ impl State {
         self.model_matrix = rotation;
 
         self.renderer
-            .render(&self.models, &self.camera, &self.light, self.model_matrix)?;
+            .render(&self.models, &self.camera, &self.lights, self.model_matrix)?;
         self.window.request_redraw();
 
         Ok(())

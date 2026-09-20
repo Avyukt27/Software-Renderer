@@ -20,7 +20,9 @@ pub struct Renderer {
     camera_bind_group: wgpu::BindGroup,
 
     light_buffer: wgpu::Buffer,
+    light_buffer_size: usize,
     light_bind_group: wgpu::BindGroup,
+    light_bind_group_layout: wgpu::BindGroupLayout,
 
     model_matrix_buffer: wgpu::Buffer,
     model_matrix_bind_group: wgpu::BindGroup,
@@ -211,7 +213,9 @@ impl Renderer {
             camera_buffer,
             camera_bind_group,
             light_buffer,
+            light_buffer_size: 1,
             light_bind_group,
+            light_bind_group_layout,
             model_matrix_buffer,
             model_matrix_bind_group,
             depth_texture,
@@ -253,7 +257,7 @@ impl Renderer {
         &mut self,
         models: &[Model],
         camera: &Camera,
-        light: &Light,
+        lights: &Vec<Light>,
         model_matrix: glam::Mat4,
     ) -> anyhow::Result<()> {
         let frame = match self.surface.get_current_texture() {
@@ -282,13 +286,37 @@ impl Renderer {
                 label: Some("Render encoder"),
             });
 
-        let camera_uniform = camera.to_uniform();
+        let camera_uniform: CameraUniform = camera.into();
         self.queue
             .write_buffer(&self.camera_buffer, 0, bytemuck::bytes_of(&camera_uniform));
 
-        let light_uniform = light.to_uniform();
-        self.queue
-            .write_buffer(&self.light_buffer, 0, bytemuck::bytes_of(&light_uniform));
+        let light_uniforms: Vec<LightUniform> = lights.iter().map(|l| l.into()).collect();
+        let light_count = light_uniforms.len();
+
+        if light_count > self.light_buffer_size {
+            self.light_buffer_size = std::cmp::max(light_count, self.light_buffer_size * 2);
+            let new_size = (std::mem::size_of::<LightUniform>() * self.light_buffer_size) as u64;
+
+            self.light_buffer = self.device.create_buffer(&wgpu::BufferDescriptor {
+                label: Some("Light Buffer"),
+                size: new_size,
+                usage: wgpu::BufferUsages::STORAGE | wgpu::BufferUsages::COPY_DST,
+                mapped_at_creation: false,
+            });
+            self.light_bind_group = self.device.create_bind_group(&wgpu::BindGroupDescriptor {
+                label: Some("Light Bind Group"),
+                layout: &self.light_bind_group_layout,
+                entries: &[wgpu::BindGroupEntry {
+                    binding: 0,
+                    resource: self.light_buffer.as_entire_binding(),
+                }],
+            });
+        }
+
+        if light_count > 0 {
+            self.queue
+                .write_buffer(&self.light_buffer, 0, bytemuck::cast_slice(&light_uniforms));
+        }
 
         let model_uniform = ModelUniform::from(model_matrix);
         self.queue.write_buffer(
@@ -405,7 +433,7 @@ fn create_bind_groups(
                 binding: 0,
                 visibility: wgpu::ShaderStages::FRAGMENT,
                 ty: wgpu::BindingType::Buffer {
-                    ty: wgpu::BufferBindingType::Uniform,
+                    ty: wgpu::BufferBindingType::Storage { read_only: true },
                     has_dynamic_offset: false,
                     min_binding_size: None,
                 },
@@ -415,7 +443,7 @@ fn create_bind_groups(
     let light_buffer = device.create_buffer(&wgpu::wgt::BufferDescriptor {
         label: Some("Light Buffer"),
         size: std::mem::size_of::<LightUniform>() as u64,
-        usage: wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST,
+        usage: wgpu::BufferUsages::STORAGE | wgpu::BufferUsages::COPY_DST,
         mapped_at_creation: false,
     });
     let light_bind_group = device.create_bind_group(&wgpu::BindGroupDescriptor {
