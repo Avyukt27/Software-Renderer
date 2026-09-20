@@ -15,6 +15,7 @@ pub struct MtlMaterial {
     pub specular: [f32; 3],
     pub shininess: f32,
     pub diffuse_map: Option<String>,
+    pub rough_map: Option<String>,
 }
 
 #[allow(dead_code)]
@@ -57,11 +58,17 @@ fn load_mtl<P: AsRef<Path> + Debug>(path: P) -> HashMap<String, MtlMaterial> {
                     specular: [0.0, 0.0, 0.0],
                     shininess: 32.0,
                     diffuse_map: None,
+                    rough_map: None,
                 });
             }
             "map_Kd" => {
                 if let Some(ref mut material) = current_material {
                     material.diffuse_map = Some(tokens[1].to_string());
+                }
+            }
+            "map_Ns" => {
+                if let Some(ref mut material) = current_material {
+                    material.rough_map = Some(tokens[1].to_string());
                 }
             }
             "Ka" => {
