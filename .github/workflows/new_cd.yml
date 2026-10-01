@@ -1,0 +1,59 @@
+name: Rust
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        BUILD_TARGET: [x86_64-unknown-linux-gnu]
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Cache
+      uses: actions/cache@v4
+      with:
+        path: |
+          ~/.cargo/registry
+          ~/.cargo/git
+          target
+        key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+
+    - name: Add Rust Target
+      run: rustup target add ${{ matrix.BUILD_TARGET }}
+
+    - name: Build binaries
+      run: cargo build --target ${{ matrix.BUILD_TARGET }} --release --verbose
+
+    - name: Upload release artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: software_renderer
+        path: target/${{ matrix.BUILD_TARGET }}/release/software_renderer
+
+  upload:
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Download release artifact
+      uses: actions/download-artifact@v4
+      with:
+        name: software_renderer
+        path: .
+
+    - name: Publish built binary to GitHub releases
+      env:
+        GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      run: |
+        gh release create ${{ github.ref_name }} --generate-notes ./software_renderer
